@@ -16,6 +16,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn import preprocessing
 from sklearn.model_selection import GridSearchCV
+from sklearn.neural_network import MLPRegressor
 
 # Use pandas t o l o a d i n t o a DataFrame
 # Y1 . c s v doesn ’ t have a h e a d e r s o
@@ -59,29 +60,47 @@ def KNN(X1, Y1):
     y_train = Y1[0:9999]
 
     grid_params = {
-        'n_neighbors': [3, 5, 11, 19],
+        'n_neighbors': [10],
         'weights': ['uniform', 'distance'],
-        'metric': ['euclidean', 'manhattan']
+        'metric': ['minkowski', 'cosine'],#'euclidean', 'manhattan', 'chebyshev',
     }
+    # {'metric': 'cosine', 'n_neighbors': 10, 'weights': 'uniform'}
+    # 0.5008216155210505
+
+
 
     scaler = preprocessing.StandardScaler().fit(X_train)
 
     # pca = make_pipeline(StandardScaler(), PCA(n_components=3, random_state=0))
     # pca.fit(X_train, y_train)
+    score_func = sklearn.metrics.make_scorer(scoreregression)
 
     gs = GridSearchCV(
         KNeighborsRegressor(),
         grid_params,
         verbose = 1,
         cv = 3,
-        n_jobs = -1
+        n_jobs = -1,
+        scoring = score_func
         )
-    gs.fit(scaler.transform(X_train), y_train)
+    gs_result = gs.fit(scaler.transform(X_train), y_train)
+    print(gs_result.best_params_)
     y_pred = gs.predict(scaler.transform(X1[10000:19000]))
     # knn = KNeighborsRegressor(n_neighbors=5)
     # knn.fit(pca.transform(scaler.transform(X_train)), np.ravel(y_train))
     #
     # y_pred = knn.predict(pca.transform(scaler.transform(X1[10000:19000,:])))
+    print(scoreregression(Y1[10000:19000], y_pred))
+
+def MLP(X1, Y1):
+    X_train = X1[0:9999,:]
+    y_train = Y1[0:9999]
+
+    score_func = sklearn.metrics.make_scorer(scoreregression)
+
+    regr = MLPRegressor(random_state=1, max_iter=500).fit(X_train, np.ravel(y_train))
+
+    y_pred = regr.predict(X1[10000:19000])
     print(scoreregression(Y1[10000:19000], y_pred))
 
 
