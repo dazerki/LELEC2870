@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 try:
     import seaborn as sns
@@ -7,9 +6,10 @@ except:
     pass
 import pandas as pd
 import sklearn
+import seaborn as sms
+import random
 
-from sklearn import datasets, linear_model
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn import linear_model
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.decomposition import PCA
 from sklearn.pipeline import make_pipeline
@@ -17,10 +17,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import preprocessing
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
+from sklearn.feature_selection import mutual_info_regression
 
 
 def scoref1(ytrue, ypred, th):
     return sklearn.metrics.f1_score(ytrue > th, ypred > th)
+
 
 def scoreregression(ytrue, ypred):
     scores = [
@@ -28,20 +30,72 @@ def scoreregression(ytrue, ypred):
     ]
     return np.mean(scores)
 
-def preProcessCorr(X, Y):
 
-    # corr = np.corrcoef(training_set)
-    # ind = np.argpartition(corr[:][58], -4)[-4:]
-    # features = np.zeros((19822, 3))
-    # tracker = 0
-    # for i in ind[0:-1]:
-    #     features[:, tracker] = X1[:, i]
-    #     tracker += 1
+def classRepartition(target):
+    flop = sum(target < 500)[0]
+    mild_success = sum(np.logical_and(500 <= target, target < 1400))[0]
+    success = sum(np.logical_and(1400 <= target, target < 5000))[0]
+    great_success = sum(np.logical_and(5000 <= target, target < 10000))[0]
+    viral = sum(target >= 10000)[0]
+    print("Number of flop articles : {}".format(flop))
+    print("Number of mild success articles : {}".format(mild_success))
+    print("Number of success articles : {}".format(success))
+    print("Number of great success articles : {}".format(great_success))
+    print("Number of viral articles : {}".format(viral))
 
-    corr = np.corrcoef(X, Y, rowvar=False)[:-1, -1]  # last column/line is correlation between each feature and output
-    mean_corr = np.mean(np.abs(corr))
-    corr_ind = np.where(np.abs(corr) > mean_corr)[0]  # numpy.where returns array of the result => take the result
-    return X[:, corr_ind]
+
+def minimumRedundancy(X, corr, target_corr, thresh=0.4):
+    toKeep = np.ones(corr.shape, dtype=bool)
+    for i in range(len(corr)):
+        corr_i = corr[i, :]
+        inds = np.flip(np.argsort(corr_i))
+        j = 0
+        while corr_i[inds[j]] >= thresh:
+            if i != inds[j]:
+                # Keep most relevant feature and remove the other to avoid redundancy
+                if target_corr[i] >= target_corr[inds[j]]:
+                    toKeep[inds[j], :] = False
+                    toKeep[:, inds[j]] = False
+                else:
+                    toKeep[i, :] = False
+                    toKeep[:, i] = False
+            j += 1
+    mask = np.argmax(sum(toKeep))  # find a line where we have at least one true to extract the indices to keep
+    non_redundant_ind = np.where(toKeep[mask])[0]
+    return X[:, non_redundant_ind]
+
+
+def maximumRelevance(X, Y, n_components=None):
+    corr = np.corrcoef(X, Y, rowvar=False)
+    target_corr = corr[:-1, -1]  # last column/line is correlation between each feature and output
+    if n_components is not None:
+        ind = np.argsort(target_corr)
+        target_corr_ind = ind[-n_components:]
+    else:
+        mean_corr = np.mean(np.abs(target_corr))
+        # numpy.where returns array of the result => take the result
+        target_corr_ind = np.where(np.abs(target_corr) > mean_corr)[0]
+
+    return X[:, target_corr_ind], corr[target_corr_ind, :][:, target_corr_ind], target_corr
+
+
+def MRMR(X, Y, n_components=None, thresh=0.4):
+
+    Xmr, corr, target_corr = maximumRelevance(X, Y, n_components)
+    Xmrmr = minimumRedundancy(Xmr, np.abs(corr), np.abs(target_corr), thresh=thresh)
+
+    return Xmrmr
+
+
+def preProcessMutualInf(X, Y, n_components=None):
+    muInf = mutual_info_regression(X, np.ravel(Y))
+    if n_components is not None:
+        ind = np.argsort(muInf)
+        muInf_ind = ind[-n_components:]
+    else:
+        mean_muInf = np.mean(np.abs(muInf))
+        muInf_ind = np.where(muInf > mean_muInf)[0]  # numpy.where returns array of the result => take the result
+    return X[:, muInf_ind]
 
 
 class ModelTrainer:
@@ -52,6 +106,8 @@ class ModelTrainer:
         self. preProcessingList = preProcessingList
         self.scoringFunction = scoringFunction
         self.modelType = modelType
+        self.evalData = []
+        self.evalTarget = []
 
         if modelType == 'linear':
             self.model = linear_model.LinearRegression()
@@ -60,26 +116,103 @@ class ModelTrainer:
         elif modelType == 'MLP':
             self.model = MLPRegressor(random_state=1, max_iter=500)
 
+    def outputClassRepartition(self):
+        output = self.model.predict(self.evalData)
+        flop = sum(output < 500)
+        mild_success = sum(np.logical_and(500 <= output, output < 1400))
+        success = sum(np.logical_and(1400 <= output, output < 5000))
+        great_success = sum(np.logical_and(5000 <= output, output < 10000))
+        viral = sum(output >= 10000)
+        print("Number of flop articles : {}".format(flop))
+        print("Number of mild success articles : {}".format(mild_success))
+        print("Number of success articles : {}".format(success))
+        print("Number of great success articles : {}".format(great_success))
+        print("Number of viral articles : {}".format(viral))
+
+    def visualize(self):
+
+        if self.modelType == 'linear':
+            plt.figure()
+            plt.boxplot(self.target)
+            plt.show()
+
     # Pre-processing of the data
-    def preProcess(self):
+    def preProcess(self, n_components=None, thresh=0.4, min=True):
 
         for preProcessMethod in self.preProcessingList:
 
-            if preProcessMethod == 'correlation':
-                self.data = preProcessCorr(self.data, self.target)
+            if preProcessMethod == 'mrmr':
+                self.data = MRMR(self.data, self.target, n_components=n_components, thresh=thresh)
+                self.evalData = self.data.copy()
+                self.evalTarget = self.target.copy()
+
+            elif preProcessMethod == 'mutual':
+                self.data = preProcessMutualInf(self.data, self.target, n_components=n_components)
+                self.evalData = self.data.copy()
+                self.evalTarget = self.target.copy()
 
             elif preProcessMethod == 'whitening':
                 continue
 
-            elif preProcessMethod == 'normalization':
+            elif preProcessMethod == 'standardization':
                 scaler = preprocessing.StandardScaler().fit(self.data)
                 self.data = scaler.transform(self.data)
+                self.evalData = self.data.copy()
+                self.evalTarget = self.target.copy()
 
             elif preProcessMethod == 'PCA':
                 pca = make_pipeline(StandardScaler(), PCA(n_components=3, random_state=0))
                 pca.fit(self.data, self.target)
                 self.data = pca.transform(self.data)
-                continue
+                self.evalData = self.data.copy()
+                self.evalTarget = self.target.copy()
+
+            elif preProcessMethod == 'outliers':
+                mean = np.mean(self.target)
+                std = np.std(self.target)
+                mask = np.bitwise_and(mean - std <= self.target, self.target <= mean + std)[:, 0]
+                self.data = self.data[mask, :]
+                self.target = self.target[mask]
+                self.evalData = self.data.copy()
+                self.evalTarget = self.target.copy()
+
+            elif preProcessMethod == 'equalClassSize':
+                data = np.concatenate((self.data, self.target), axis=1)
+                flop = data[(self.target < 500)[:, 0]]
+                mild_success = data[(np.logical_and(500 <= self.target, self.target < 1400))[:, 0]]
+                success = data[(np.logical_and(1400 <= self.target, self.target < 5000))[:, 0]]
+                great_success = data[(np.logical_and(5000 <= self.target, self.target < 10000))[:, 0]]
+                viral = data[(self.target >= 10000)[:, 0]]
+
+                if min:
+                    mini = np.min([len(flop), len(mild_success), len(success), len(great_success), len(viral)])
+                    if len(flop) != mini:
+                        flop = random.choices(flop, k=mini)
+                    if len(mild_success) != mini:
+                        mild_success = random.choices(mild_success, k=mini)
+                    if len(success) != mini:
+                        success = random.choices(success, k=mini)
+                    if len(great_success) != mini:
+                        great_success = random.choices(great_success, k=mini)
+                    if len(viral) != mini:
+                        viral = random.choices(viral, k=mini)
+                else:
+                    max = np.max([len(flop), len(mild_success), len(success), len(great_success), len(viral)])
+                    if max - len(flop) != 0:
+                        flop = np.concatenate((flop, random.choices(flop, k=max-len(flop))), axis=0)
+                    if max - len(mild_success) != 0:
+                        mild_success = np.concatenate((mild_success, random.choices(mild_success, k=max - len(mild_success))), axis=0)
+                    if max - len(success) != 0:
+                        success = np.concatenate((success, random.choices(success, k=max - len(success))), axis=0)
+                    if max - len(great_success) != 0:
+                        great_success = np.concatenate((great_success, random.choices(great_success, k=max - len(great_success))), axis=0)
+                    if max - len(viral) != 0:
+                        viral = np.concatenate((viral, random.choices(viral, k=max - len(viral))), axis=0)
+
+                data = np.concatenate((flop, mild_success, success, great_success, viral), axis=0)
+                random.shuffle(data)
+                self.data = data[:, :-1]
+                self.target = data[:, -1]
 
              # other pre-processing steps ?
             else:
@@ -94,7 +227,7 @@ class ModelTrainer:
         # Step 1 - Building training and validation sets
 
         # indices to split in training set and validation set
-        ind = np.arange(X1.shape[0], dtype='int64')
+        ind = np.arange(size, dtype='int64')
 
         np.random.shuffle(ind)
         training_ind, validation_ind = ind[:int(size * training_ratio)], ind[int(size * training_ratio):]
@@ -123,23 +256,15 @@ class ModelTrainer:
             self.model.fit(self.training_data, self.training_target)
 
     # Evaluation of the trained model
-    def evaluate(self, nb_epochs):
-        train_results = []
-        valid_results = []
+    def evaluate(self):
 
-        print("Evaluation will be done through {} epochs.".format(nb_epochs))
-        for epoch in range(nb_epochs):
+        # Evaluate the combination pre-processing + model
+        predictions = self.model.predict(self.evalData)
 
-            # Evaluate the combination pre-processing + model
-            train_predictions = self.model.predict(self.training_data)
-            valid_predictions = self.model.predict(self.validation_data)
+        # Compute scores
+        results = self.scoringFunction(self.evalTarget, predictions)
 
-            # Compute scores
-            train_results.append(self.scoringFunction(self.training_target, train_predictions))
-            valid_results.append(self.scoringFunction(self.validation_target, valid_predictions))
-            print("Ended iteration {} out of {}".format(epoch+1, nb_epochs))
-
-        return np.mean(train_results), np.mean(valid_results)
+        return results
 
 
 if __name__ == "__main__":
@@ -155,6 +280,9 @@ if __name__ == "__main__":
     X1 = X1.values
     Y1 = Y1.values
 
+    # Visualization
+    classRepartition(Y1)  # print number of articles per class
+
     # number of times we have to validate (10 epochs seem to be a minimal to obtain relevant performances results)
     nb_epochs = 10
 
@@ -164,16 +292,16 @@ if __name__ == "__main__":
     # which methods we want to train (linear, KNN, MLP), be careful about the computation time
     # example : methods = ['linear', 'KNN', 'MLP', ...]
     methods = []
-    #methods.append('linear')
+    methods.append('linear')
     #methods.append('KNN')
-    methods.append('MLP')
+    #methods.append('MLP')
 
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
     preProcessing = []
-    #preProcessing.append(['correlation'])  # for linear regression
+    preProcessing.append(['standardization', 'mrmr', 'equalClassSize'])  # for linear regression
     #preProcessing.append(['normalization'])  # for KNN
-    preProcessing.append([])
+    #preProcessing.append([])  # for MLP
 
     for i, method in enumerate(methods):
 
@@ -181,6 +309,9 @@ if __name__ == "__main__":
 
         # Build the trainer
         trainer = ModelTrainer(X1, Y1, method, preProcessing[i], scoreregression)
+
+        # Visualize data
+        # trainer.visualize()
 
         # Pre-process the data with the given methods
         print("Start of pre-processing ...", end="")
@@ -207,9 +338,11 @@ if __name__ == "__main__":
 
         # Evaluate the model after training
         print("Start of evaluation ...", end="")
-        training_result, validation_result = trainer.evaluate(nb_epochs=nb_epochs)
+        result = trainer.evaluate()
         print("End of evaluation.")
 
         # Print results
-        print("Average result for the {} method on the training set : {:.2f}".format(method, training_result))
-        print("Average result for the {} method on the validation set : {:.2f}".format(method, validation_result))
+        print("Result for the {} method : {:.2f}".format(method, result))
+
+        # Output class repartition
+        trainer.outputClassRepartition()
