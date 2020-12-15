@@ -18,6 +18,7 @@ from sklearn import preprocessing
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.feature_selection import mutual_info_regression
+from sklearn.pipeline import Pipeline
 
 
 def scoref1(ytrue, ypred, th):
@@ -44,49 +45,6 @@ def classRepartition(target):
     print("Number of viral articles : {}".format(viral))
 
 
-def minimumRedundancy(X, corr, target_corr, thresh=0.4):
-    toKeep = np.ones(corr.shape, dtype=bool)
-    for i in range(len(corr)):
-        corr_i = corr[i, :]
-        inds = np.flip(np.argsort(corr_i))
-        j = 0
-        while corr_i[inds[j]] >= thresh:
-            if i != inds[j]:
-                # Keep most relevant feature and remove the other to avoid redundancy
-                if target_corr[i] >= target_corr[inds[j]]:
-                    toKeep[inds[j], :] = False
-                    toKeep[:, inds[j]] = False
-                else:
-                    toKeep[i, :] = False
-                    toKeep[:, i] = False
-            j += 1
-    mask = np.argmax(sum(toKeep))  # find a line where we have at least one true to extract the indices to keep
-    non_redundant_ind = np.where(toKeep[mask])[0]
-    return X[:, non_redundant_ind]
-
-
-def maximumRelevance(X, Y, n_components=None):
-    corr = np.corrcoef(X, Y, rowvar=False)
-    target_corr = corr[:-1, -1]  # last column/line is correlation between each feature and output
-    if n_components is not None:
-        ind = np.argsort(target_corr)
-        target_corr_ind = ind[-n_components:]
-    else:
-        mean_corr = np.mean(np.abs(target_corr))
-        # numpy.where returns array of the result => take the result
-        target_corr_ind = np.where(np.abs(target_corr) > mean_corr)[0]
-
-    return X[:, target_corr_ind], corr[target_corr_ind, :][:, target_corr_ind], target_corr
-
-
-def MRMR(X, Y, n_components=None, thresh=0.4):
-
-    Xmr, corr, target_corr = maximumRelevance(X, Y, n_components)
-    Xmrmr = minimumRedundancy(Xmr, np.abs(corr), np.abs(target_corr), thresh=thresh)
-
-    return Xmrmr
-
-
 def preProcessMutualInf(X, Y, n_components=None):
     muInf = mutual_info_regression(X, np.ravel(Y))
     if n_components is not None:
@@ -96,6 +54,56 @@ def preProcessMutualInf(X, Y, n_components=None):
         mean_muInf = np.mean(np.abs(muInf))
         muInf_ind = np.where(muInf > mean_muInf)[0]  # numpy.where returns array of the result => take the result
     return X[:, muInf_ind]
+
+
+class MRMR:
+
+    def __init__(self, n_components, thresh):
+        self.n_components = n_components
+        self.thresh = thresh
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        X_ = X.copy()
+        Xmr, corr, target_corr = self.maximumRelevance(X_, y, self.n_components)
+        Xmrmr = self.minimumRedundancy(Xmr, np.abs(corr), np.abs(target_corr), thresh=self.thresh)
+
+        return Xmrmr
+
+    def maximumRelevance(self, X, Y, n_components=None):
+        corr = np.corrcoef(X, Y, rowvar=False)
+        target_corr = corr[:-1, -1]  # last column/line is correlation between each feature and output
+        if n_components is not None:
+            ind = np.argsort(target_corr)
+            target_corr_ind = ind[-n_components:]
+        else:
+            mean_corr = np.mean(np.abs(target_corr))
+            # numpy.where returns array of the result => take the result
+            target_corr_ind = np.where(np.abs(target_corr) > mean_corr)[0]
+
+        return X[:, target_corr_ind], corr[target_corr_ind, :][:, target_corr_ind], target_corr
+
+    def minimumRedundancy(self, X, corr, target_corr, thresh=0.4):
+        toKeep = np.ones(corr.shape, dtype=bool)
+        for i in range(len(corr)):
+            corr_i = corr[i, :]
+            inds = np.flip(np.argsort(corr_i))
+            j = 0
+            while corr_i[inds[j]] >= thresh:
+                if i != inds[j]:
+                    # Keep most relevant feature and remove the other to avoid redundancy
+                    if target_corr[i] >= target_corr[inds[j]]:
+                        toKeep[inds[j], :] = False
+                        toKeep[:, inds[j]] = False
+                    else:
+                        toKeep[i, :] = False
+                        toKeep[:, i] = False
+                j += 1
+        mask = np.argmax(sum(toKeep))  # find a line where we have at least one true to extract the indices to keep
+        non_redundant_ind = np.where(toKeep[mask])[0]
+        return X[:, non_redundant_ind]
 
 
 class ModelTrainer:
@@ -142,9 +150,7 @@ class ModelTrainer:
         for preProcessMethod in self.preProcessingList:
 
             if preProcessMethod == 'mrmr':
-                self.data = MRMR(self.data, self.target, n_components=n_components, thresh=thresh)
-                self.evalData = self.data.copy()
-                self.evalTarget = self.target.copy()
+                self.model = Pipeline(steps=[('mrmr', MRMR(n_components, thresh)), ('regression', self.model)])
 
             elif preProcessMethod == 'mutual':
                 self.data = preProcessMutualInf(self.data, self.target, n_components=n_components)
@@ -244,27 +250,45 @@ class ModelTrainer:
             self.model = GridSearchCV(
                 self.model,
                 parametersGrid,
-                verbose=1,
+                verbose=0,
                 cv=3,
                 n_jobs=-1,
                 scoring=score_func
             )
 
+        # We should do cross-validation here as well (possible to do it on the pre-processing line with pipeline maybe?)
+        # No need to divide the data into training and validation is we can use GridSearchCV, it does it itself
         if self.modelType == 'MLP':
             self.model.fit(self.training_data, np.ravel(self.training_target))
         else:
             self.model.fit(self.training_data, self.training_target)
 
-    # Evaluation of the trained model
-    def evaluate(self):
+    # Evaluation of the pipeline
+    def evaluate(self, nb_iters=10, testing_ratio=0.3):
 
-        # Evaluate the combination pre-processing + model
-        predictions = self.model.predict(self.validation_data)
+        size, N = self.data.shape
+        eval_size = int(size*testing_ratio)
 
-        # Compute scores
-        results = self.scoringFunction(self.validation_target, predictions)
+        results = []
+        ind = np.arange(size, dtype='int64')
 
-        return results
+        print("Evaluation will be done through {} iterations.".format(nb_iters))
+        for iter in range(nb_iters):
+
+            np.random.shuffle(ind)
+            evaluation_data = self.data[ind[:eval_size], :]
+            evaluation_target = self.target[ind[:eval_size]]
+
+            # Evaluate the combination pre-processing + model
+            predictions = self.model.predict(evaluation_data)
+
+            # Compute scores
+            results.append(self.scoringFunction(evaluation_target, predictions))
+
+            if (iter+1) % 10 == 0:
+                print("Ended iteration {} out of {}".format(iter+1, nb_iters))
+
+        return np.mean(results)
 
 
 if __name__ == "__main__":
@@ -299,7 +323,7 @@ if __name__ == "__main__":
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
     preProcessing = []
-    #preProcessing.append(['standardization', 'mrmr', 'equalClassSize'])  # for linear regression
+    #preProcessing.append(['standardization'])  # for linear regression
     preProcessing.append(['standardization','equalClassSize'])  # for KNN
     #preProcessing.append([])  # for MLP
 
@@ -315,7 +339,8 @@ if __name__ == "__main__":
 
         # Pre-process the data with the given methods
         print("Start of pre-processing ...", end="")
-        trainer.preProcess()
+        # thresh is for minimum redundancy, n_components for maximum_relevance, ignored if MRMR is not used
+        trainer.preProcess(thresh=1.0, n_components=20)
         print("End of pre-processing.")
 
         # Define the parameters to train
@@ -338,7 +363,7 @@ if __name__ == "__main__":
 
         # Evaluate the model after training
         print("Start of evaluation ...", end="")
-        result = trainer.evaluate()
+        result = trainer.evaluate(nb_iters=100, testing_ratio=0.3)
         print("End of evaluation.")
 
         # Print results
