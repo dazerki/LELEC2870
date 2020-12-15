@@ -19,6 +19,9 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.feature_selection import mutual_info_regression
 from sklearn.pipeline import Pipeline
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
 
 
 def scoref1(ytrue, ypred, th):
@@ -235,13 +238,15 @@ class ModelTrainer:
         # indices to split in training set and validation set
         ind = np.arange(size, dtype='int64')
 
-        np.random.shuffle(ind)
-        training_ind, validation_ind = ind[:int(size * training_ratio)], ind[int(size * training_ratio):]
+        X_train, X_test, y_train, y_test = train_test_split(self.data, self.target,test_size=(1-training_ratio), random_state=1998)
 
-        self.training_data = self.data[training_ind, :]
-        self.training_target = self.target[training_ind]
-        self.validation_data = self.data[validation_ind, :]
-        self.validation_target = self.target[validation_ind]
+        # np.random.shuffle(ind)
+        # training_ind, validation_ind = ind[:int(size * training_ratio)], ind[int(size * training_ratio):]
+
+        self.training_data = X_train
+        self.training_target = y_train
+        self.validation_data = X_test
+        self.validation_target = y_test
 
         # Step 2 - Train the model
 
@@ -262,6 +267,7 @@ class ModelTrainer:
             self.model.fit(self.training_data, np.ravel(self.training_target))
         else:
             self.model.fit(self.training_data, self.training_target)
+            print('Best score: ',self.model.best_score_)
 
     # Evaluation of the pipeline
     def evaluate(self, nb_iters=10, testing_ratio=0.3):
@@ -346,9 +352,10 @@ if __name__ == "__main__":
         # Define the parameters to train
         if method == 'KNN':
             grid_params = {
-                'n_neighbors': [10],
+                'n_neighbors': [24],
                 'weights': ['uniform', 'distance'],
-                'metric': ['minkowski', 'cosine'],  # 'euclidean', 'manhattan', 'chebyshev',
+                'metric': ['minkowski', 'cosine'],
+                'leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev',
             }
             # {'metric': 'cosine', 'n_neighbors': 10, 'weights': 'uniform'}
             # 0.5008216155210505
@@ -363,7 +370,7 @@ if __name__ == "__main__":
 
         # Evaluate the model after training
         print("Start of evaluation ...", end="")
-        result = trainer.evaluate(nb_iters=100, testing_ratio=0.3)
+        result = trainer.evaluate(nb_iters=1, testing_ratio=1)
         print("End of evaluation.")
 
         # Print results
