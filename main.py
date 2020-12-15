@@ -112,13 +112,15 @@ class MRMR:
 class ModelTrainer:
 
     def __init__(self, data, target, modelType, preProcessingList, scoringFunction):
-        self.data = data
-        self.target = target
+        X_train, X_test, y_train, y_test = train_test_split(data, target,test_size=0.3, random_state=1998)
+
+        self.data = X_train
+        self.target = y_train
         self. preProcessingList = preProcessingList
         self.scoringFunction = scoringFunction
         self.modelType = modelType
-        self.evalData = []
-        self.evalTarget = []
+        self.evalData = X_test
+        self.evalTarget = y_test
 
         if modelType == 'linear':
             self.model = linear_model.LinearRegression()
@@ -166,15 +168,13 @@ class ModelTrainer:
             elif preProcessMethod == 'standardization':
                 scaler = preprocessing.StandardScaler().fit(self.data)
                 self.data = scaler.transform(self.data)
-                self.evalData = self.data.copy()
-                self.evalTarget = self.target.copy()
+                self.evalData = scaler.transform(self.evalData)
 
             elif preProcessMethod == 'PCA':
                 pca = make_pipeline(StandardScaler(), PCA(n_components=3, random_state=0))
                 pca.fit(self.data, self.target)
                 self.data = pca.transform(self.data)
-                self.evalData = self.data.copy()
-                self.evalTarget = self.target.copy()
+                self.evalData = pca.transform(self.evalData)
 
             elif preProcessMethod == 'outliers':
                 mean = np.mean(self.target)
@@ -238,15 +238,16 @@ class ModelTrainer:
         # indices to split in training set and validation set
         ind = np.arange(size, dtype='int64')
 
-        X_train, X_test, y_train, y_test = train_test_split(self.data, self.target,test_size=(1-training_ratio), random_state=1998)
+        # X_train, X_test, y_train, y_test = train_test_split(self.data, self.target,test_size=(1-training_ratio), random_state=1998)
 
         # np.random.shuffle(ind)
         # training_ind, validation_ind = ind[:int(size * training_ratio)], ind[int(size * training_ratio):]
 
-        self.training_data = X_train
-        self.training_target = y_train
-        self.validation_data = X_test
-        self.validation_target = y_test
+        # self.training_data = X_train
+        # self.training_target = y_train
+        # self.validation_data = X_test
+        # self.validation_target = y_test
+        # print(np.mean(y_test))
 
         # Step 2 - Train the model
 
@@ -264,37 +265,24 @@ class ModelTrainer:
         # We should do cross-validation here as well (possible to do it on the pre-processing line with pipeline maybe?)
         # No need to divide the data into training and validation is we can use GridSearchCV, it does it itself
         if self.modelType == 'MLP':
-            self.model.fit(self.training_data, np.ravel(self.training_target))
+            self.model.fit(self.data, np.ravel(self.target))
         else:
-            self.model.fit(self.training_data, self.training_target)
+            self.model.fit(self.data, self.target)
             print('Best score: ',self.model.best_score_)
 
     # Evaluation of the pipeline
     def evaluate(self, nb_iters=10, testing_ratio=0.3):
 
-        size, N = self.validation_data.shape
-        eval_size = int(size*testing_ratio)
+        evaluation_data = self.evalData
+        evaluation_target = self.evalTarget
 
-        results = []
-        ind = np.arange(size, dtype='int64')
+        # Evaluate the combination pre-processing + model
+        predictions = self.model.predict(evaluation_data)
 
-        print("Evaluation will be done through {} iterations.".format(nb_iters))
-        for iter in range(nb_iters):
+        # Compute scores
+        results = self.scoringFunction(evaluation_target, predictions)
 
-            np.random.shuffle(ind)
-            evaluation_data = self.validation_data[ind[:eval_size], :]
-            evaluation_target = self.validation_target[ind[:eval_size]]
-
-            # Evaluate the combination pre-processing + model
-            predictions = self.model.predict(evaluation_data)
-
-            # Compute scores
-            results.append(self.scoringFunction(evaluation_target, predictions))
-
-            if (iter+1) % 10 == 0:
-                print("Ended iteration {} out of {}".format(iter+1, nb_iters))
-
-        return np.mean(results)
+        return results
 
 
 if __name__ == "__main__":
@@ -324,14 +312,14 @@ if __name__ == "__main__":
     methods = []
     #methods.append('linear')
     methods.append('KNN')
-    #methods.append('MLP')
+    # methods.append('MLP')
 
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
     preProcessing = []
     #preProcessing.append(['standardization'])  # for linear regression
-    preProcessing.append(['standardization','equalClassSize'])  # for KNN
-    #preProcessing.append([])  # for MLP
+    preProcessing.append(['standardization'])  # for KNN
+    # preProcessing.append(['whitening'])  # for MLP
 
     for i, method in enumerate(methods):
 
