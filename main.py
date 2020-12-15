@@ -195,6 +195,7 @@ class ModelTrainer:
 
                 if min:
                     mini = np.min([len(flop), len(mild_success), len(success), len(great_success), len(viral)])
+                    print(mini)
                     if len(flop) != mini:
                         flop = random.choices(flop, k=mini)
                     if len(mild_success) != mini:
@@ -334,16 +335,16 @@ if __name__ == "__main__":
         # Pre-process the data with the given methods
         print("Start of pre-processing ...", end="")
         # thresh is for minimum redundancy, n_components for maximum_relevance, ignored if MRMR is not used
-        trainer.preProcess(thresh=1.0, n_components=20)
+        trainer.preProcess(thresh=1.0, n_components=20, min=True)
         print("End of pre-processing.")
 
         # Define the parameters to train
         if method == 'KNN':
             grid_params = {
-                'n_neighbors': [24],
-                'weights': ['uniform', 'distance'],
-                'metric': ['minkowski', 'cosine'],
-                'leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev',
+                'n_neighbors': np.arange(1,50),
+                'weights': ['distance', 'uniform'], #, 'uniform'
+                'metric': [ 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine', 'minkowski'],
+                'leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine',
             }
             # {'metric': 'cosine', 'n_neighbors': 10, 'weights': 'uniform'}
             # 0.5008216155210505
