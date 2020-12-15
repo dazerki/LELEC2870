@@ -266,7 +266,7 @@ class ModelTrainer:
     # Evaluation of the pipeline
     def evaluate(self, nb_iters=10, testing_ratio=0.3):
 
-        size, N = self.data.shape
+        size, N = self.validation_data.shape
         eval_size = int(size*testing_ratio)
 
         results = []
@@ -276,8 +276,8 @@ class ModelTrainer:
         for iter in range(nb_iters):
 
             np.random.shuffle(ind)
-            evaluation_data = self.data[ind[:eval_size], :]
-            evaluation_target = self.target[ind[:eval_size]]
+            evaluation_data = self.validation_data[ind[:eval_size], :]
+            evaluation_target = self.validation_target[ind[:eval_size]]
 
             # Evaluate the combination pre-processing + model
             predictions = self.model.predict(evaluation_data)
