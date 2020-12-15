@@ -259,10 +259,10 @@ class ModelTrainer:
     def evaluate(self):
 
         # Evaluate the combination pre-processing + model
-        predictions = self.model.predict(self.evalData)
+        predictions = self.model.predict(self.validation_data)
 
         # Compute scores
-        results = self.scoringFunction(self.evalTarget, predictions)
+        results = self.scoringFunction(self.validation_target, predictions)
 
         return results
 
@@ -292,15 +292,15 @@ if __name__ == "__main__":
     # which methods we want to train (linear, KNN, MLP), be careful about the computation time
     # example : methods = ['linear', 'KNN', 'MLP', ...]
     methods = []
-    methods.append('linear')
-    #methods.append('KNN')
+    #methods.append('linear')
+    methods.append('KNN')
     #methods.append('MLP')
 
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
     preProcessing = []
-    preProcessing.append(['standardization', 'mrmr', 'equalClassSize'])  # for linear regression
-    #preProcessing.append(['normalization'])  # for KNN
+    #preProcessing.append(['standardization', 'mrmr', 'equalClassSize'])  # for linear regression
+    preProcessing.append(['standardization','equalClassSize'])  # for KNN
     #preProcessing.append([])  # for MLP
 
     for i, method in enumerate(methods):
@@ -342,7 +342,7 @@ if __name__ == "__main__":
         print("End of evaluation.")
 
         # Print results
-        print("Result for the {} method : {:.2f}".format(method, result))
+        print("Result for the {} method : {:.3f}".format(method, result))
 
         # Output class repartition
         trainer.outputClassRepartition()
