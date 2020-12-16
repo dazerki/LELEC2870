@@ -53,13 +53,14 @@ def classRepartition(target):
 
 class ModelTrainer:
 
-    def __init__(self, data, target, modelType, preProcessingList, scoringFunction, feature_correlations,
+    def __init__(self, data, target, keys, modelType, preProcessingList, scoringFunction, feature_correlations,
                  target_correlations, test_ratio=0.3, seed=1998):
 
         X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=test_ratio, random_state=seed)
 
         self.data = X_train
         self.target = y_train
+        self.keys = keys
         self.preProcessingList = preProcessingList
         self.scoringFunction = scoringFunction
         self.modelType = modelType
@@ -130,10 +131,63 @@ class ModelTrainer:
 
     def visualize(self):
 
-        if self.modelType == 'linear':
-            plt.figure()
-            plt.boxplot(self.target)
+        target = self.target[self.target < 20000]
+        data = self.data[(self.target < 20000).T[0], :]
+
+        flop = target < 500
+        mild_success = np.logical_and(500 <= target, target < 1400)
+        success = np.logical_and(1400 <= target, target < 5000)
+        great_success = np.logical_and(5000 <= target, target < 10000)
+        viral = target >= 10000
+
+        colors = np.full(len(target), "yellow")
+        colors[flop] = "blue"
+        colors[mild_success] = "green"
+        colors[success] = "yellow"
+        colors[great_success] = "orange"
+        colors[viral] = "red"
+
+        flops = data[flop, :]
+        mild_successes = data[mild_success, :]
+        successes = data[success, :]
+        great_successes = data[great_success, :]
+        virals = data[viral, :]
+
+        flops_target = target[flop]
+        mild_successes_target = target[mild_success]
+        successes_target = target[success]
+        great_successes_target = target[great_success]
+        virals_target = target[viral]
+
+        labels = ['flop', 'mild', 'success', 'great', 'viral']
+        colors2 = ["blue", "green", "yellow", "orange", "red"]
+        data_per_label = np.array([flops, mild_successes, successes, great_successes, virals])
+        target_per_label = np.array(
+            [flops_target, mild_successes_target, successes_target, great_successes_target, virals_target])
+
+        plt.rcParams["figure.figsize"] = (10, 10)
+
+        # each feature wrt the target
+        # """
+        for i in range(int(np.ceil(len(data[0]) / 4))):
+            fig, axs = plt.subplots(nrows=2, ncols=2)
+            for j in range(min(4, 58 - 4 * i)):
+                axs[j // 2, j % 2].scatter(target, data[:, i * 4 + j], c=colors)
+                axs[j // 2, j % 2].set_title(self.keys[i * 4 + j])
             plt.show()
+        # """
+
+        # each feature PER CLASS wrt the target
+        """
+        for i in range(len(data[0])):
+            fig, axs = plt.subplots(nrows=2, ncols=3)
+            fig.suptitle("Feature n° {} : {}".format(i+1, self.keys[i]))
+            for j in range(5):
+                col = np.tile(colors2[j], len(target_per_label[j][:]))
+                axs[j//3, j%3].scatter(target_per_label[j][:], data_per_label[j][:, i], c=col)
+                axs[j//3, j%3].set_title(labels[j])
+            plt.show()
+        """
 
     # Pre-processing of the data
     def addPreProcess(self):
@@ -216,7 +270,7 @@ class ModelTrainer:
             self.model.fit(self.data, np.ravel(self.target))
         else:
             self.model.fit(self.data, self.target)
-            if grid_params is not None:
+            if parametersGrid is not None:
                 self.training_score = self.model.best_score_
                 self.best_model = self.model.best_params_
                 self.trained_params = self.model.param_grid
@@ -242,6 +296,7 @@ if __name__ == "__main__":
     X1 = pd.read_csv('X1.csv')
     Y1 = pd.read_csv('Y1.csv', header=None, names=['shares'])
     X2 = pd.read_csv('X2.csv')
+    keys = X1.keys()
 
     # To work with numpy arrays :
     X1 = X1.values
@@ -280,7 +335,7 @@ if __name__ == "__main__":
         print("========== TRAINING MODEL : {} ==========".format(method))
 
         # Build the trainer
-        trainer = ModelTrainer(X1, Y1, method, preProcessing[i], scoreregression, feature_correlations,
+        trainer = ModelTrainer(X1, Y1, keys, method, preProcessing[i], scoreregression, feature_correlations,
                                target_correlations, test_ratio=test_ratio, seed=seed)
 
         # Visualize data
