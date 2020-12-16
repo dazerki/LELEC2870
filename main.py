@@ -1,3 +1,4 @@
+# general imports
 import numpy as np
 import matplotlib.pyplot as plt
 try:
@@ -6,26 +7,27 @@ except:
     pass
 import pandas as pd
 import sklearn
-import seaborn as sms
-import random
 
+# sklearn imports
 from sklearn import linear_model
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.decomposition import PCA
-from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn import preprocessing
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
-from sklearn.feature_selection import mutual_info_regression
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import KFold
-from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
+
+# custom imports
+from MRMR import MRMR
+from Mutual_Info_Selection import MutualInfoSelection
+from Remove_outliers import RemoveOutliers
+from Upsample import UpSample
+from Downsample import DownSample
 
 
 def scoref1(ytrue, ypred, th):
-    return sklearn.metrics.f1_score(ytrue > th, ypred > th)
+    return sklearn.metrics.f1_score(ytrue > th, ypred > th, zero_division=0)
 
 
 def scoreregression(ytrue, ypred):
@@ -48,99 +50,71 @@ def classRepartition(target):
     print("Number of viral articles : {}".format(viral))
 
 
-def preProcessMutualInf(X, Y, n_components=None):
-    muInf = mutual_info_regression(X, np.ravel(Y))
-    if n_components is not None:
-        ind = np.argsort(muInf)
-        muInf_ind = ind[-n_components:]
-    else:
-        mean_muInf = np.mean(np.abs(muInf))
-        muInf_ind = np.where(muInf > mean_muInf)[0]  # numpy.where returns array of the result => take the result
-    return X[:, muInf_ind]
-
-
-class MRMR:
-
-    def __init__(self, n_components, thresh):
-        self.n_components = n_components
-        self.thresh = thresh
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X, y=None):
-        X_ = X.copy()
-        Xmr, corr, target_corr = self.maximumRelevance(X_, y, self.n_components)
-        Xmrmr = self.minimumRedundancy(Xmr, np.abs(corr), np.abs(target_corr), thresh=self.thresh)
-
-        return Xmrmr
-
-    def maximumRelevance(self, X, Y, n_components=None):
-        corr = np.corrcoef(X, Y, rowvar=False)
-        target_corr = corr[:-1, -1]  # last column/line is correlation between each feature and output
-        if n_components is not None:
-            ind = np.argsort(target_corr)
-            target_corr_ind = ind[-n_components:]
-        else:
-            mean_corr = np.mean(np.abs(target_corr))
-            # numpy.where returns array of the result => take the result
-            target_corr_ind = np.where(np.abs(target_corr) > mean_corr)[0]
-
-        return X[:, target_corr_ind], corr[target_corr_ind, :][:, target_corr_ind], target_corr
-
-    def minimumRedundancy(self, X, corr, target_corr, thresh=0.4):
-        toKeep = np.ones(corr.shape, dtype=bool)
-        for i in range(len(corr)):
-            corr_i = corr[i, :]
-            inds = np.flip(np.argsort(corr_i))
-            j = 0
-            while corr_i[inds[j]] >= thresh:
-                if i != inds[j]:
-                    # Keep most relevant feature and remove the other to avoid redundancy
-                    if target_corr[i] >= target_corr[inds[j]]:
-                        toKeep[inds[j], :] = False
-                        toKeep[:, inds[j]] = False
-                    else:
-                        toKeep[i, :] = False
-                        toKeep[:, i] = False
-                j += 1
-        mask = np.argmax(sum(toKeep))  # find a line where we have at least one true to extract the indices to keep
-        non_redundant_ind = np.where(toKeep[mask])[0]
-        return X[:, non_redundant_ind]
-
-
 class ModelTrainer:
 
-    def __init__(self, data, target, modelType, preProcessingList, scoringFunction):
-        X_train, X_test, y_train, y_test = train_test_split(data, target,test_size=0.3, random_state=1998)
+    def __init__(self, data, target, modelType, preProcessingList, scoringFunction, feature_correlations,
+                 target_correlations, test_ratio=0.3, seed=1998):
+
+        X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=test_ratio, random_state=seed)
 
         self.data = X_train
         self.target = y_train
-        self. preProcessingList = preProcessingList
+        self.preProcessingList = preProcessingList
         self.scoringFunction = scoringFunction
         self.modelType = modelType
         self.evalData = X_test
         self.evalTarget = y_test
+        self.test_ratio = test_ratio
+        self.seed = seed
+        self.feature_correlations = feature_correlations
+        self.target_correlations = target_correlations
+        self.training_score = -1
+        self.best_model = None
+        self.trained_params = None
 
         if modelType == 'linear':
             self.model = linear_model.LinearRegression()
         elif modelType == 'KNN':
             self.model = KNeighborsRegressor()
         elif modelType == 'MLP':
-            self.model = MLPRegressor(random_state=1, max_iter=500)
+            self.model = MLPRegressor(random_state=self.seed, max_iter=500)
 
     def outputClassRepartition(self):
         output = self.model.predict(self.evalData)
+        target = self.evalTarget
+
+        if len(output.shape) > 1:
+            output = output[:, 0]
+        if len(target.shape) > 1:
+            target = target[:, 0]
+
         flop = sum(output < 500)
         mild_success = sum(np.logical_and(500 <= output, output < 1400))
         success = sum(np.logical_and(1400 <= output, output < 5000))
         great_success = sum(np.logical_and(5000 <= output, output < 10000))
         viral = sum(output >= 10000)
-        print("Number of flop articles : {}".format(flop))
-        print("Number of mild success articles : {}".format(mild_success))
-        print("Number of success articles : {}".format(success))
-        print("Number of great success articles : {}".format(great_success))
-        print("Number of viral articles : {}".format(viral))
+
+        flop_target = sum(target < 500)
+        mild_success_target = sum(np.logical_and(500 <= target, target < 1400))
+        success_target = sum(np.logical_and(1400 <= target, target < 5000))
+        great_success_target = sum(np.logical_and(5000 <= target, target < 10000))
+        viral_target = sum(target >= 10000)
+
+        print("Number of flop articles :\n\t"
+              "- In output : {}\n\t"
+              "- In target : {}".format(flop, flop_target))
+        print("Number of flop articles :\n\t"
+              "- In output : {}\n\t"
+              "- In target : {}".format(mild_success, mild_success_target))
+        print("Number of flop articles :\n\t"
+              "- In output : {}\n\t"
+              "- In target : {}".format(success, success_target))
+        print("Number of flop articles :\n\t"
+              "- In output : {}\n\t"
+              "- In target : {}".format(great_success, great_success_target))
+        print("Number of flop articles :\n\t"
+              "- In output : {}\n\t"
+              "- In target : {}".format(viral, viral_target))
 
     def visualize(self):
 
@@ -150,107 +124,68 @@ class ModelTrainer:
             plt.show()
 
     # Pre-processing of the data
-    def preProcess(self, n_components=None, thresh=0.4, min=True):
+    def addPreProcess(self):
+
+        steps = []
 
         for preProcessMethod in self.preProcessingList:
 
+            # MRMR args :
+            # feature_correlations is the precomputed correlation matrix between the features, can't grid search on it
+            # => set it once and for all
+            # target_correlations is the precomputed correlation matrix between the features and the target,
+            # can't grid search on it => set it once and for all
+            # n_components, number of components with highest correlation with target, default to 20
+            # thresh, the threshold for the correlation above which we have to remove one feature, default to 1.0
             if preProcessMethod == 'mrmr':
-                self.model = Pipeline(steps=[('mrmr', MRMR(n_components, thresh)), ('regression', self.model)])
+                feature_corr = self.feature_correlations.copy()
+                target_corr = self.target_correlations.copy()
+                steps.append(('mrmr', MRMR(feature_corr, target_corr)))
 
+            # MutualInfoSelection args :
+            # n_components, the number of components with the highest mutual info to keep, default to 20
             elif preProcessMethod == 'mutual':
-                self.data = preProcessMutualInf(self.data, self.target, n_components=n_components)
-                self.evalData = self.data.copy()
-                self.evalTarget = self.target.copy()
+                steps.append(('mutual', MutualInfoSelection()))
 
             elif preProcessMethod == 'whitening':
                 continue
 
+            # No args
             elif preProcessMethod == 'standardization':
-                scaler = preprocessing.StandardScaler().fit(self.data)
-                self.data = scaler.transform(self.data)
-                self.evalData = scaler.transform(self.evalData)
+                steps.append(('standardization', StandardScaler()))
 
+            # PCA args :
+            # n_components, number of components to identify with PCA, default to all components
+            # whiten, boolean indicating if PCA has to use whitening before applying the algorithm
+            # random_state, seed to have reproducible results
             elif preProcessMethod == 'PCA':
-                pca = make_pipeline(StandardScaler(), PCA(n_components=3, random_state=0))
-                pca.fit(self.data, self.target)
-                self.data = pca.transform(self.data)
-                self.evalData = pca.transform(self.evalData)
+                steps.append(('pca_standardization', StandardScaler()))
+                steps.append(('pca', PCA(random_state=self.seed)))
 
+            # No args, always applied before the other methods !
             elif preProcessMethod == 'outliers':
-                mean = np.mean(self.target)
-                std = np.std(self.target)
-                mask = np.bitwise_and(mean - std <= self.target, self.target <= mean + std)[:, 0]
-                self.data = self.data[mask, :]
-                self.target = self.target[mask]
-                self.evalData = self.data.copy()
-                self.evalTarget = self.target.copy()
+                ro = RemoveOutliers()
+                self.data, self.target = ro.transform(self.data, self.target)
 
-            elif preProcessMethod == 'equalClassSize':
-                data = np.concatenate((self.data, self.target), axis=1)
-                flop = data[(self.target < 500)[:, 0]]
-                mild_success = data[(np.logical_and(500 <= self.target, self.target < 1400))[:, 0]]
-                success = data[(np.logical_and(1400 <= self.target, self.target < 5000))[:, 0]]
-                great_success = data[(np.logical_and(5000 <= self.target, self.target < 10000))[:, 0]]
-                viral = data[(self.target >= 10000)[:, 0]]
+            # No args, always applied before the other methods !
+            elif preProcessMethod == 'upsample':
+                up = UpSample()
+                self.data, self.target = up.transform(self.data, self.target, self.seed)
 
-                if min:
-                    mini = np.min([len(flop), len(mild_success), len(success), len(great_success), len(viral)])
-                    print(mini)
-                    if len(flop) != mini:
-                        flop = random.choices(flop, k=mini)
-                    if len(mild_success) != mini:
-                        mild_success = random.choices(mild_success, k=mini)
-                    if len(success) != mini:
-                        success = random.choices(success, k=mini)
-                    if len(great_success) != mini:
-                        great_success = random.choices(great_success, k=mini)
-                    if len(viral) != mini:
-                        viral = random.choices(viral, k=mini)
-                else:
-                    max = np.max([len(flop), len(mild_success), len(success), len(great_success), len(viral)])
-                    if max - len(flop) != 0:
-                        flop = np.concatenate((flop, random.choices(flop, k=max-len(flop))), axis=0)
-                    if max - len(mild_success) != 0:
-                        mild_success = np.concatenate((mild_success, random.choices(mild_success, k=max - len(mild_success))), axis=0)
-                    if max - len(success) != 0:
-                        success = np.concatenate((success, random.choices(success, k=max - len(success))), axis=0)
-                    if max - len(great_success) != 0:
-                        great_success = np.concatenate((great_success, random.choices(great_success, k=max - len(great_success))), axis=0)
-                    if max - len(viral) != 0:
-                        viral = np.concatenate((viral, random.choices(viral, k=max - len(viral))), axis=0)
-
-                data = np.concatenate((flop, mild_success, success, great_success, viral), axis=0)
-                random.shuffle(data)
-                self.data = data[:, :-1]
-                self.target = data[:, -1]
+            # No args, always applied before the other methods !
+            elif preProcessMethod == 'downsample':
+                down = DownSample()
+                self.data, self.target = down.transform(self.data, self.target, self.seed)
 
              # other pre-processing steps ?
             else:
                 continue
 
+        steps.append(('regression', self.model))
+        self.model = Pipeline(steps=steps)
+
     # Training of the model
-    def train(self, training_ratio=0.7, parametersGrid=None):
-
-        # useful values : size = nb of data points, N = nb of features
-        size, N = self.data.shape
-
-        # Step 1 - Building training and validation sets
-
-        # indices to split in training set and validation set
-        ind = np.arange(size, dtype='int64')
-
-        # X_train, X_test, y_train, y_test = train_test_split(self.data, self.target,test_size=(1-training_ratio), random_state=1998)
-
-        # np.random.shuffle(ind)
-        # training_ind, validation_ind = ind[:int(size * training_ratio)], ind[int(size * training_ratio):]
-
-        # self.training_data = X_train
-        # self.training_target = y_train
-        # self.validation_data = X_test
-        # self.validation_target = y_test
-        # print(np.mean(y_test))
-
-        # Step 2 - Train the model
+    def train(self, parametersGrid=None):
 
         if parametersGrid is not None:
             score_func = sklearn.metrics.make_scorer(self.scoringFunction)
@@ -263,27 +198,25 @@ class ModelTrainer:
                 scoring=score_func
             )
 
-        # We should do cross-validation here as well (possible to do it on the pre-processing line with pipeline maybe?)
-        # No need to divide the data into training and validation is we can use GridSearchCV, it does it itself
         if self.modelType == 'MLP':
             self.model.fit(self.data, np.ravel(self.target))
         else:
             self.model.fit(self.data, self.target)
-            print('Best score: ',self.model.best_score_)
+            if grid_params is not None:
+                self.training_score = self.model.best_score_
+                self.best_model = self.model.best_params_
+                self.trained_params = self.model.param_grid
 
     # Evaluation of the pipeline
-    def evaluate(self, nb_iters=10, testing_ratio=0.3):
+    def evaluate(self):
 
-        evaluation_data = self.evalData
-        evaluation_target = self.evalTarget
+        # Predict targets of unseen data
+        predictions = self.model.predict(self.evalData)
 
-        # Evaluate the combination pre-processing + model
-        predictions = self.model.predict(evaluation_data)
+        # Compute score
+        result = self.scoringFunction(self.evalTarget, predictions)
 
-        # Compute scores
-        results = self.scoringFunction(evaluation_target, predictions)
-
-        return results
+        return self.training_score, self.trained_params, self.best_model, result
 
 
 if __name__ == "__main__":
@@ -294,19 +227,24 @@ if __name__ == "__main__":
 
     X1 = pd.read_csv('X1.csv')
     Y1 = pd.read_csv('Y1.csv', header=None, names=['shares'])
+    X2 = pd.read_csv('X2.csv')
 
     # To work with numpy arrays :
     X1 = X1.values
     Y1 = Y1.values
+    X2 = X2.values
 
     # Visualization
     classRepartition(Y1)  # print number of articles per class
 
-    # number of times we have to validate (10 epochs seem to be a minimal to obtain relevant performances results)
-    nb_epochs = 10
-
-    # which ratio of the data set we use for training (other data used for validation)
-    training_ratio = 0.7
+    # which ratio of the data set we use for testing
+    test_ratio = 0.3
+    # seed for reproducible results
+    seed = 1998
+    # pre-computation of correlation matrices between features on the whole data set and between features and target
+    # for the labelled data X1
+    feature_correlations = np.corrcoef(np.concatenate((X1, X2), axis=0), rowvar=False)
+    target_correlations = np.corrcoef(X1, Y1, rowvar=False)[:-1, -1]
 
     # which methods we want to train (linear, KNN, MLP), be careful about the computation time
     # example : methods = ['linear', 'KNN', 'MLP', ...]
@@ -318,7 +256,8 @@ if __name__ == "__main__":
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
     preProcessing = []
-    #preProcessing.append(['standardization'])  # for linear regression
+    #preProcessing.append([])  # dummy elements in case of no pre-processing
+    #preProcessing.append(['PCA'])  # for linear regression
     preProcessing.append(['standardization'])  # for KNN
     # preProcessing.append(['whitening'])  # for MLP
 
@@ -327,24 +266,37 @@ if __name__ == "__main__":
         print("========== TRAINING MODEL : {} ==========".format(method))
 
         # Build the trainer
-        trainer = ModelTrainer(X1, Y1, method, preProcessing[i], scoreregression)
+        trainer = ModelTrainer(X1, Y1, method, preProcessing[i], scoreregression, feature_correlations,
+                               target_correlations, test_ratio=test_ratio, seed=seed)
 
         # Visualize data
         # trainer.visualize()
 
-        # Pre-process the data with the given methods
+        # Add the pre-processing steps to the pipeline
         print("Start of pre-processing ...", end="")
-        # thresh is for minimum redundancy, n_components for maximum_relevance, ignored if MRMR is not used
-        trainer.preProcess(thresh=1.0, n_components=20, min=True)
+        trainer.addPreProcess()
         print("End of pre-processing.")
 
-        # Define the parameters to train
-        if method == 'KNN':
+        # Define the parameters to train, including those of the pre-processing steps you added
+        if (method == 'linear' and not preProcessing[i].__contains__('mrmr') and
+                not preProcessing[i].__contains__('mutual') and not preProcessing[i].__contains__('PCA')):
+
+            grid_params = None
+
+        elif method == 'linear':
+
             grid_params = {
-                'n_neighbors': np.arange(1,50),
-                'weights': ['distance', 'uniform'], #, 'uniform'
-                'metric': [ 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine', 'minkowski'],
-                'leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine',
+                'pca__n_components': np.arange(1, 59, 1),
+                'pca__whiten': [True, False]
+            }
+
+        elif method == 'KNN':
+
+            grid_params = {
+                'regression__n_neighbors': np.arange(1, 3),
+                'regression__weights': ['distance', 'uniform'], #, 'uniform'
+                'regression__metric': [ 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine'],
+                'regression__leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine',
             }
             # {'metric': 'cosine', 'n_neighbors': 10, 'weights': 'uniform'}
             # 0.5008216155210505
@@ -354,16 +306,20 @@ if __name__ == "__main__":
 
         # Train the model
         print("Start of training ...", end="")
-        trainer.train(training_ratio=training_ratio, parametersGrid=grid_params)
+        trainer.train(parametersGrid=grid_params)
         print("End of training.")
 
         # Evaluate the model after training
         print("Start of evaluation ...", end="")
-        result = trainer.evaluate(nb_iters=1, testing_ratio=1)
+        train_result, trained_params, best_model, result = trainer.evaluate()
         print("End of evaluation.")
 
         # Print results
-        print("Result for the {} method : {:.3f}".format(method, result))
+        if train_result != -1:
+            print("Best training result for the {} method : {:.3f}".format(method, train_result))
+            print("Trained parameters : {}".format(trained_params))
+            print("Best parameters : {}".format(best_model))
+        print("Testing result for the {} method : {:.3f}".format(method, result))
 
         # Output class repartition
         trainer.outputClassRepartition()
