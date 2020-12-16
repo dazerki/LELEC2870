@@ -15,15 +15,16 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
-from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
+from imblearn.pipeline import Pipeline
+# from sklearn.pipeline import Pipeline
 
 # custom imports
 from MRMR import MRMR
 from Mutual_Info_Selection import MutualInfoSelection
 from Remove_outliers import RemoveOutliers
 from Upsample import UpSample
-from Downsample import DownSample
+from Downsample import DownSampling
 
 
 def scoref1(ytrue, ypred, th):
@@ -185,13 +186,15 @@ class ModelTrainer:
 
             # No args, always applied before the other methods !
             elif preProcessMethod == 'downsample':
-                down = DownSample()
-                self.data, self.target = down.transform(self.data, self.target, self.seed)
+                continue
+                # down = DownSample()
+                # self.data, self.target = down.transform(self.data, self.target, self.seed)
 
              # other pre-processing steps ?
             else:
                 continue
 
+        steps.append(('sampling', DownSampling()))
         steps.append(('regression', self.model))
         self.model = Pipeline(steps=steps)
 
@@ -249,7 +252,7 @@ if __name__ == "__main__":
     classRepartition(Y1)  # print number of articles per class
 
     # which ratio of the data set we use for testing
-    test_ratio = 0.3
+    test_ratio = 0.2
     # seed for reproducible results
     seed = 1998
     # pre-computation of correlation matrices between features on the whole data set and between features and target
@@ -260,7 +263,7 @@ if __name__ == "__main__":
     # which methods we want to train (linear, KNN, MLP), be careful about the computation time
     # example : methods = ['linear', 'KNN', 'MLP', ...]
     methods = []
-    #methods.append('linear')
+    # methods.append('linear')
     methods.append('KNN')
     # methods.append('MLP')
 
@@ -268,8 +271,8 @@ if __name__ == "__main__":
     # pre-processing step for each method
     preProcessing = []
     #preProcessing.append([])  # dummy elements in case of no pre-processing
-    #preProcessing.append(['PCA'])  # for linear regression
-    preProcessing.append(['downsample','standardization'])  # for KNN
+    # preProcessing.append(['PCA'])  # for linear regression
+    preProcessing.append(['standardization'])  # for KNN
     # preProcessing.append(['whitening'])  # for MLP
 
     for i, method in enumerate(methods):
@@ -304,10 +307,10 @@ if __name__ == "__main__":
         elif method == 'KNN':
 
             grid_params = {
-                'regression__n_neighbors': np.arange(1,10),
-                'regression__weights': [ 'distance', 'uniform'], #, 'uniform'
-                'regression__metric': [  'minkowski', 'euclidean', 'manhattan', 'chebyshev'],
-                # 'regression__leaf_size': np.arange(2,5) # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine','euclidean', 'manhattan', 'chebyshev'
+                'regression__n_neighbors': [24],
+                'regression__weights': ['distance'], #, 'uniform'
+                'regression__metric': [ 'minkowski'],
+                'regression__leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine','euclidean', 'manhattan', 'chebyshev'
             }
             # {'metric': 'cosine', 'n_neighbors': 10, 'weights': 'uniform'}
             # 0.5008216155210505
