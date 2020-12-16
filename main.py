@@ -88,6 +88,12 @@ class ModelTrainer:
         if len(target.shape) > 1:
             target = target[:, 0]
 
+        flop_hit = np.size(np.where(np.logical_and(target < 500, output < 500)))
+        mild_success_hit = np.size(np.where(np.logical_and(np.logical_and(500 <= target, target < 1400),np.logical_and(500 <= output, output < 1400))))
+        success_hit = np.size(np.where(np.logical_and(np.logical_and(1400 <= target, target < 5000),np.logical_and(1400 <= output, output < 5000))))
+        great_success_hit = np.size(np.where(np.logical_and(np.logical_and(5000 <= target, target < 10000),np.logical_and(5000 <= output, output < 10000))))
+        viral_hit = np.size(np.where(np.logical_and(target >= 10000, output >= 10000)))
+
         flop = sum(output < 500)
         mild_success = sum(np.logical_and(500 <= output, output < 1400))
         success = sum(np.logical_and(1400 <= output, output < 5000))
@@ -103,18 +109,23 @@ class ModelTrainer:
         print("Number of flop articles :\n\t"
               "- In output : {}\n\t"
               "- In target : {}".format(flop, flop_target))
-        print("Number of flop articles :\n\t"
+        print("flop hit / flop total: {} / {}".format(flop_hit,flop_target))
+        print("Number of mild success articles :\n\t"
               "- In output : {}\n\t"
               "- In target : {}".format(mild_success, mild_success_target))
-        print("Number of flop articles :\n\t"
+        print("mild success hit / mild success total: {} / {}".format(mild_success_hit,mild_success_target))
+        print("Number of success articles :\n\t"
               "- In output : {}\n\t"
               "- In target : {}".format(success, success_target))
-        print("Number of flop articles :\n\t"
+        print("success hit / success total: {} / {}".format(success_hit,success_target))
+        print("Number of great success articles :\n\t"
               "- In output : {}\n\t"
               "- In target : {}".format(great_success, great_success_target))
-        print("Number of flop articles :\n\t"
+        print("great success hit / great success total: {} / {}".format(great_success_hit,great_success_target))
+        print("Number of viral articles :\n\t"
               "- In output : {}\n\t"
               "- In target : {}".format(viral, viral_target))
+        print("viral hit / viral total: {} / {}".format(viral_hit,viral_target))
 
     def visualize(self):
 
@@ -258,7 +269,7 @@ if __name__ == "__main__":
     preProcessing = []
     #preProcessing.append([])  # dummy elements in case of no pre-processing
     #preProcessing.append(['PCA'])  # for linear regression
-    preProcessing.append(['standardization'])  # for KNN
+    preProcessing.append(['downsample','standardization'])  # for KNN
     # preProcessing.append(['whitening'])  # for MLP
 
     for i, method in enumerate(methods):
@@ -293,10 +304,10 @@ if __name__ == "__main__":
         elif method == 'KNN':
 
             grid_params = {
-                'regression__n_neighbors': np.arange(1, 3),
-                'regression__weights': ['distance', 'uniform'], #, 'uniform'
-                'regression__metric': [ 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine'],
-                'regression__leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine',
+                'regression__n_neighbors': np.arange(1,10),
+                'regression__weights': [ 'distance', 'uniform'], #, 'uniform'
+                'regression__metric': [  'minkowski', 'euclidean', 'manhattan', 'chebyshev'],
+                # 'regression__leaf_size': np.arange(2,5) # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine','euclidean', 'manhattan', 'chebyshev'
             }
             # {'metric': 'cosine', 'n_neighbors': 10, 'weights': 'uniform'}
             # 0.5008216155210505

@@ -1,5 +1,7 @@
 import numpy as np
 import random
+import sklearn
+from sklearn.utils import resample
 
 
 class DownSample:
@@ -29,15 +31,16 @@ class DownSample:
 
         mini = np.min([len(flop), len(mild_success), len(success), len(great_success), len(viral)])
         if len(flop) != mini:
-            flop = random.choices(flop, k=mini)
+            #flop = random.choices(flop, k=mini)
+            flop = resample(flop, n_samples=mini, random_state=0, stratify=flop)
         if len(mild_success) != mini:
-            mild_success = random.choices(mild_success, k=mini)
+            mild_success = resample(mild_success, n_samples=mini, random_state=0, stratify=mild_success)
         if len(success) != mini:
-            success = random.choices(success, k=mini)
+            success = resample(success, n_samples=mini, random_state=0, stratify=success)
         if len(great_success) != mini:
-            great_success = random.choices(great_success, k=mini)
+            great_success = resample(great_success, n_samples=mini, random_state=0, stratify=great_success)
         if len(viral) != mini:
-            viral = random.choices(viral, k=mini)
+            viral = resample(viral, n_samples=mini+0.1*mini, random_state=0, stratify=viral)
 
         data = np.concatenate((flop, mild_success, success, great_success, viral), axis=0)
         random.shuffle(data)
