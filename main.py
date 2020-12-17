@@ -23,7 +23,7 @@ from imblearn.pipeline import Pipeline
 from MRMR import MRMR
 from Mutual_Info_Selection import MutualInfoSelection
 from Remove_outliers import RemoveOutliers
-from Upsample import UpSample
+from Upsample import UpSampling
 from Downsample import DownSampling
 
 
@@ -235,8 +235,9 @@ class ModelTrainer:
 
             # No args, always applied before the other methods !
             elif preProcessMethod == 'upsample':
-                up = UpSample()
-                self.data, self.target = up.transform(self.data, self.target, self.seed)
+                continue
+                # up = UpSample()
+                # self.data, self.target = up.transform(self.data, self.target, self.seed)
 
             # No args, always applied before the other methods !
             elif preProcessMethod == 'downsample':
@@ -248,7 +249,7 @@ class ModelTrainer:
             else:
                 continue
 
-        steps.append(('sampling', DownSampling()))
+        steps.append(('sampling', UpSampling()))
         steps.append(('regression', self.model))
         self.model = Pipeline(steps=steps)
 
@@ -319,16 +320,16 @@ if __name__ == "__main__":
     # example : methods = ['linear', 'KNN', 'MLP', ...]
     methods = []
     # methods.append('linear')
-    methods.append('KNN')
-    # methods.append('MLP')
+    # methods.append('KNN')
+    methods.append('MLP')
 
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
     preProcessing = []
     #preProcessing.append([])  # dummy elements in case of no pre-processing
     # preProcessing.append(['PCA'])  # for linear regression
-    preProcessing.append(['standardization'])  # for KNN
-    # preProcessing.append(['whitening'])  # for MLP
+    # preProcessing.append(['standardization'])  # for KNN
+    preProcessing.append(['whitening'])  # for MLP
 
     for i, method in enumerate(methods):
 
@@ -362,11 +363,14 @@ if __name__ == "__main__":
         elif method == 'KNN':
 
             grid_params = {
-                'regression__n_neighbors': [24],
-                'regression__weights': ['distance'], #, 'uniform'
-                'regression__metric': [ 'minkowski'],
+                'regression__n_neighbors': np.arange(2,30),
+                'regression__weights': ['distance', 'uniform'], #, 'uniform'
+                'regression__metric': [ 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine'],
                 'regression__leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine','euclidean', 'manhattan', 'chebyshev'
             }
+            # Best parameters : {'regression__leaf_size': 2, 'regression__metric': 'manhattan', 'regression__n_neighbors': 48, 'regression__weights': 'distance'}
+            # Testing result for the KNN method : 0.528
+
             # {'metric': 'cosine', 'n_neighbors': 10, 'weights': 'uniform'}
             # 0.5008216155210505
 
