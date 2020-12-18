@@ -1,22 +1,10 @@
 import numpy as np
 
 
-class RemoveOutliers:
+def remove_outliers(X, y, below=0.0, above=0.0):
+    sorted_y = np.sort(y.copy())
+    thresh_below = sorted_y[int(below*len(y))]
+    thresh_above = sorted_y[-int(above*len(y))-1]
+    mask = np.logical_and(y >= thresh_below, y <= thresh_above)  # which data we have to keep is between the thresholds
 
-    def __init__(self):
-        pass
-
-    def transform(self, X, y):
-        X_ = X.copy()
-        y_ = y.copy()
-        X_, y_ = self.__remove_outliers(X_, y_)
-
-        return X_, y_
-
-    # Make the function private with __ in front of it
-    def __remove_outliers(self, X, y):
-        mean = np.mean(y)
-        std = np.std(y)
-        mask = np.bitwise_and(mean - std <= y, y <= mean + std)[:, 0]
-
-        return X[mask, :], y[mask]
+    return X[mask, :], y[mask]

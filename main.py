@@ -16,15 +16,19 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
+
+# imblearn imports
 from imblearn.pipeline import Pipeline
-# from sklearn.pipeline import Pipeline
+from imblearn import FunctionSampler
 
 # custom imports
 from MRMR import MRMR
 from Mutual_Info_Selection import MutualInfoSelection
-from Remove_outliers import RemoveOutliers
+from Remove_outliers import remove_outliers
 from Upsample import UpSampling
 from Downsample import DownSampling
+from output import printOuput
+from Visualizer import visualize
 
 
 def scoref1(ytrue, ypred, th):
@@ -84,110 +88,7 @@ class ModelTrainer:
     def outputClassRepartition(self):
         output = self.model.predict(self.evalData)
         target = self.evalTarget
-
-        if len(output.shape) > 1:
-            output = output[:, 0]
-        if len(target.shape) > 1:
-            target = target[:, 0]
-
-        flop_hit = np.size(np.where(np.logical_and(target < 500, output < 500)))
-        mild_success_hit = np.size(np.where(np.logical_and(np.logical_and(500 <= target, target < 1400),np.logical_and(500 <= output, output < 1400))))
-        success_hit = np.size(np.where(np.logical_and(np.logical_and(1400 <= target, target < 5000),np.logical_and(1400 <= output, output < 5000))))
-        great_success_hit = np.size(np.where(np.logical_and(np.logical_and(5000 <= target, target < 10000),np.logical_and(5000 <= output, output < 10000))))
-        viral_hit = np.size(np.where(np.logical_and(target >= 10000, output >= 10000)))
-
-        flop = sum(output < 500)
-        mild_success = sum(np.logical_and(500 <= output, output < 1400))
-        success = sum(np.logical_and(1400 <= output, output < 5000))
-        great_success = sum(np.logical_and(5000 <= output, output < 10000))
-        viral = sum(output >= 10000)
-
-        flop_target = sum(target < 500)
-        mild_success_target = sum(np.logical_and(500 <= target, target < 1400))
-        success_target = sum(np.logical_and(1400 <= target, target < 5000))
-        great_success_target = sum(np.logical_and(5000 <= target, target < 10000))
-        viral_target = sum(target >= 10000)
-
-        print("Number of flop articles :\n\t"
-              "- In output : {}\n\t"
-              "- In target : {}".format(flop, flop_target))
-        print("flop hit / flop total: {} / {}".format(flop_hit,flop_target))
-        print("Number of mild success articles :\n\t"
-              "- In output : {}\n\t"
-              "- In target : {}".format(mild_success, mild_success_target))
-        print("mild success hit / mild success total: {} / {}".format(mild_success_hit,mild_success_target))
-        print("Number of success articles :\n\t"
-              "- In output : {}\n\t"
-              "- In target : {}".format(success, success_target))
-        print("success hit / success total: {} / {}".format(success_hit,success_target))
-        print("Number of great success articles :\n\t"
-              "- In output : {}\n\t"
-              "- In target : {}".format(great_success, great_success_target))
-        print("great success hit / great success total: {} / {}".format(great_success_hit,great_success_target))
-        print("Number of viral articles :\n\t"
-              "- In output : {}\n\t"
-              "- In target : {}".format(viral, viral_target))
-        print("viral hit / viral total: {} / {}".format(viral_hit,viral_target))
-
-    def visualize(self):
-
-        target = self.target[self.target < 20000]
-        data = self.data[(self.target < 20000).T[0], :]
-
-        flop = target < 500
-        mild_success = np.logical_and(500 <= target, target < 1400)
-        success = np.logical_and(1400 <= target, target < 5000)
-        great_success = np.logical_and(5000 <= target, target < 10000)
-        viral = target >= 10000
-
-        colors = np.full(len(target), "yellow")
-        colors[flop] = "blue"
-        colors[mild_success] = "green"
-        colors[success] = "yellow"
-        colors[great_success] = "orange"
-        colors[viral] = "red"
-
-        flops = data[flop, :]
-        mild_successes = data[mild_success, :]
-        successes = data[success, :]
-        great_successes = data[great_success, :]
-        virals = data[viral, :]
-
-        flops_target = target[flop]
-        mild_successes_target = target[mild_success]
-        successes_target = target[success]
-        great_successes_target = target[great_success]
-        virals_target = target[viral]
-
-        labels = ['flop', 'mild', 'success', 'great', 'viral']
-        colors2 = ["blue", "green", "yellow", "orange", "red"]
-        data_per_label = np.array([flops, mild_successes, successes, great_successes, virals])
-        target_per_label = np.array(
-            [flops_target, mild_successes_target, successes_target, great_successes_target, virals_target])
-
-        plt.rcParams["figure.figsize"] = (10, 10)
-
-        # each feature wrt the target
-        # """
-        for i in range(int(np.ceil(len(data[0]) / 4))):
-            fig, axs = plt.subplots(nrows=2, ncols=2)
-            for j in range(min(4, 58 - 4 * i)):
-                axs[j // 2, j % 2].scatter(target, data[:, i * 4 + j], c=colors)
-                axs[j // 2, j % 2].set_title(self.keys[i * 4 + j])
-            plt.show()
-        # """
-
-        # each feature PER CLASS wrt the target
-        """
-        for i in range(len(data[0])):
-            fig, axs = plt.subplots(nrows=2, ncols=3)
-            fig.suptitle("Feature n° {} : {}".format(i+1, self.keys[i]))
-            for j in range(5):
-                col = np.tile(colors2[j], len(target_per_label[j][:]))
-                axs[j//3, j%3].scatter(target_per_label[j][:], data_per_label[j][:, i], c=col)
-                axs[j//3, j%3].set_title(labels[j])
-            plt.show()
-        """
+        printOuput(output, target)
 
     # Pre-processing of the data
     def addPreProcess(self):
@@ -213,8 +114,11 @@ class ModelTrainer:
             elif preProcessMethod == 'mutual':
                 steps.append(('mutual', MutualInfoSelection()))
 
+            # Whitening is equivalent to applying PCA on all the variables and scaling the variables to unit variance
+            # Whitening args :
+            # n_components, number of components to identify with PCA, default to all components
             elif preProcessMethod == 'whitening':
-                continue
+                steps.append(('whitening', PCA(whiten=True, random_state=self.seed)))
 
             # No args
             elif preProcessMethod == 'standardization':
@@ -225,31 +129,24 @@ class ModelTrainer:
             # whiten, boolean indicating if PCA has to use whitening before applying the algorithm
             # random_state, seed to have reproducible results
             elif preProcessMethod == 'PCA':
-                steps.append(('pca_standardization', StandardScaler()))
                 steps.append(('pca', PCA(random_state=self.seed)))
 
             # No args, always applied before the other methods !
             elif preProcessMethod == 'outliers':
-                ro = RemoveOutliers()
-                self.data, self.target = ro.transform(self.data, self.target)
+                steps.append(('outliers', FunctionSampler(func=remove_outliers)))
 
-            # No args, always applied before the other methods !
+            # No args
             elif preProcessMethod == 'upsample':
-                continue
-                # up = UpSample()
-                # self.data, self.target = up.transform(self.data, self.target, self.seed)
+                steps.append(('upsampling', UpSampling()))
 
-            # No args, always applied before the other methods !
+            # No args
             elif preProcessMethod == 'downsample':
-                continue
-                # down = DownSample()
-                # self.data, self.target = down.transform(self.data, self.target, self.seed)
+                steps.append(('downsampling', DownSampling()))
 
              # other pre-processing steps ?
             else:
                 continue
 
-        steps.append(('sampling', UpSampling()))
         steps.append(('regression', self.model))
         self.model = Pipeline(steps=steps)
 
@@ -305,42 +202,43 @@ if __name__ == "__main__":
     X2 = X2.values
 
     # Visualization
+    # WARNING : if binary_fig is true it will output 15 figures
+    #           if continuous_fig is true it will output 11 figures
+    #           if both are true it will output 26 figures
     classRepartition(Y1)  # print number of articles per class
+    visualize(X1, Y1, keys, binary_fig=False, continuous_fig=False)  # print some figures to visualize the data
 
     # which ratio of the data set we use for testing
     test_ratio = 0.2
     # seed for reproducible results
     seed = 1998
     # pre-computation of correlation matrices between features on the whole data set and between features and target
-    # for the labelled data X1
+    # for the labelled data set X1
     feature_correlations = np.corrcoef(np.concatenate((X1, X2), axis=0), rowvar=False)
     target_correlations = np.corrcoef(X1, Y1, rowvar=False)[:-1, -1]
 
     # which methods we want to train (linear, KNN, MLP), be careful about the computation time
     # example : methods = ['linear', 'KNN', 'MLP', ...]
     methods = []
-    # methods.append('linear')
+    methods.append('linear')
     # methods.append('KNN')
-    methods.append('MLP')
+    #methods.append('MLP')
 
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
     preProcessing = []
-    #preProcessing.append([])  # dummy elements in case of no pre-processing
+    preProcessing.append(['outliers'])  # dummy elements in case of no pre-processing
     # preProcessing.append(['PCA'])  # for linear regression
     # preProcessing.append(['standardization'])  # for KNN
-    preProcessing.append(['whitening'])  # for MLP
+    #preProcessing.append(['whitening', 'upsample'])  # for MLP
 
     for i, method in enumerate(methods):
 
-        print("========== TRAINING MODEL : {} ==========".format(method))
+        print("\n========== TRAINING MODEL : {} ==========".format(method))
 
         # Build the trainer
         trainer = ModelTrainer(X1, Y1, keys, method, preProcessing[i], scoreregression, feature_correlations,
                                target_correlations, test_ratio=test_ratio, seed=seed)
-
-        # Visualize data
-        # trainer.visualize()
 
         # Add the pre-processing steps to the pipeline
         print("Start of pre-processing ...", end="")
@@ -348,16 +246,19 @@ if __name__ == "__main__":
         print("End of pre-processing.")
 
         # Define the parameters to train, including those of the pre-processing steps you added
-        if (method == 'linear' and not preProcessing[i].__contains__('mrmr') and
-                not preProcessing[i].__contains__('mutual') and not preProcessing[i].__contains__('PCA')):
+        if (method == 'linear'
+                and not preProcessing[i].__contains__('mrmr') and not preProcessing[i].__contains__('outliers')
+                and not preProcessing[i].__contains__('mutual') and not preProcessing[i].__contains__('PCA')):
 
             grid_params = None
 
         elif method == 'linear':
 
+            # for outliers the argument kw_args is used an need to receive dictionaries with argument names as keys
+            # and values to test as values
+            # example : 'outliers__kw_args': [{'below': 0.01*i, 'above': 0.01*i} for i in range(5)]
             grid_params = {
-                'pca__n_components': np.arange(1, 59, 1),
-                'pca__whiten': [True, False]
+                'outliers__kw_args': [{'below': 0.01*i, 'above': 0.01*i} for i in range(5)]
             }
 
         elif method == 'KNN':
@@ -392,7 +293,7 @@ if __name__ == "__main__":
             print("Best training result for the {} method : {:.3f}".format(method, train_result))
             print("Trained parameters : {}".format(trained_params))
             print("Best parameters : {}".format(best_model))
-        print("Testing result for the {} method : {:.3f}".format(method, result))
+        print("Testing result for the {} method : {:.3f}\n".format(method, result))
 
         # Output class repartition
         trainer.outputClassRepartition()
