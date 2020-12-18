@@ -1,6 +1,5 @@
 # general imports
 import numpy as np
-import matplotlib.pyplot as plt
 try:
     import seaborn as sns
 except:
@@ -16,6 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import mutual_info_regression
 
 # imblearn imports
 from imblearn.pipeline import Pipeline
@@ -23,12 +23,12 @@ from imblearn import FunctionSampler
 
 # custom imports
 from MRMR import MRMR
-from Mutual_Info_Selection import MutualInfoSelection
+from Selector import Selector
 from Remove_outliers import remove_outliers
 from Upsample import UpSampling
 from Downsample import DownSampling
 from output import printOuput
-from Visualizer import visualize
+from Visualizer import visualize, feature_distributions
 
 
 def scoref1(ytrue, ypred, th):
@@ -58,7 +58,7 @@ def classRepartition(target):
 class ModelTrainer:
 
     def __init__(self, data, target, keys, modelType, preProcessingList, scoringFunction, feature_correlations,
-                 target_correlations, test_ratio=0.3, seed=1998):
+                 target_correlations, target_muInf, test_ratio=0.3, seed=1998):
 
         X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=test_ratio, random_state=seed)
 
@@ -74,6 +74,7 @@ class ModelTrainer:
         self.seed = seed
         self.feature_correlations = feature_correlations
         self.target_correlations = target_correlations
+        self.target_muInf = target_muInf
         self.training_score = -1
         self.best_model = None
         self.trained_params = None
@@ -109,10 +110,17 @@ class ModelTrainer:
                 target_corr = self.target_correlations.copy()
                 steps.append(('mrmr', MRMR(feature_corr, target_corr)))
 
+            elif preProcessMethod == 'select_corr':
+                steps.append(('select_corr', Selector(score_func=np.corrcoef,
+                                                      info_vector=self.target_correlations,
+                                                      random_state=self.seed)))
+
             # MutualInfoSelection args :
             # n_components, the number of components with the highest mutual info to keep, default to 20
-            elif preProcessMethod == 'mutual':
-                steps.append(('mutual', MutualInfoSelection()))
+            elif preProcessMethod == 'select_mut':
+                steps.append(('select_mut', Selector(score_func=mutual_info_regression,
+                                                     info_vector=self.target_muInf,
+                                                     random_state=self.seed)))
 
             # Whitening is equivalent to applying PCA on all the variables and scaling the variables to unit variance
             # Whitening args :
@@ -207,15 +215,22 @@ if __name__ == "__main__":
     #           if both are true it will output 26 figures
     classRepartition(Y1)  # print number of articles per class
     visualize(X1, Y1, keys, binary_fig=False, continuous_fig=False)  # print some figures to visualize the data
+    feature_distributions(X1, keys, visual=False)  # turn visual to true to see the figures (3 figures * 44 features)
 
     # which ratio of the data set we use for testing
     test_ratio = 0.2
+
     # seed for reproducible results
     seed = 1998
+
     # pre-computation of correlation matrices between features on the whole data set and between features and target
-    # for the labelled data set X1
-    feature_correlations = np.corrcoef(np.concatenate((X1, X2), axis=0), rowvar=False)
-    target_correlations = np.corrcoef(X1, Y1, rowvar=False)[:-1, -1]
+    # for the labelled data set X1 (only done if needed, see below)
+    feature_correlations = None
+    target_correlations = None
+
+    # pre-computation of mutual information matrix between features and the target (only done if needed, see below)
+    target_muInf = None
+
 
     # which methods we want to train (linear, KNN, MLP), be careful about the computation time
     # example : methods = ['linear', 'KNN', 'MLP', ...]
@@ -227,10 +242,23 @@ if __name__ == "__main__":
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
     preProcessing = []
-    preProcessing.append(['outliers'])  # dummy elements in case of no pre-processing
+    preProcessing.append(['outliers', 'select_mut'])  # dummy elements in case of no pre-processing
     # preProcessing.append(['PCA'])  # for linear regression
     # preProcessing.append(['standardization'])  # for KNN
     #preProcessing.append(['whitening', 'upsample'])  # for MLP
+
+    for i in range(len(preProcessing)):
+        if preProcessing[i].__contains__('select_corr'):
+
+            # pre-computation of correlation matrices between features on the whole data set and between features and
+            # target for the labelled data set X1
+            feature_correlations = np.corrcoef(np.concatenate((X1, X2), axis=0), rowvar=False)
+            target_correlations = np.corrcoef(X1, Y1, rowvar=False)[:-1, -1]
+
+        if preProcessing[i].__contains__('select_mut'):
+
+            # pre-computation of mutual information matrix between features and the target
+            target_muInf = mutual_info_regression(X1, np.ravel(Y1), random_state=seed)
 
     for i, method in enumerate(methods):
 
@@ -238,7 +266,7 @@ if __name__ == "__main__":
 
         # Build the trainer
         trainer = ModelTrainer(X1, Y1, keys, method, preProcessing[i], scoreregression, feature_correlations,
-                               target_correlations, test_ratio=test_ratio, seed=seed)
+                               target_correlations, target_muInf, test_ratio=test_ratio, seed=seed)
 
         # Add the pre-processing steps to the pipeline
         print("Start of pre-processing ...", end="")
@@ -246,19 +274,14 @@ if __name__ == "__main__":
         print("End of pre-processing.")
 
         # Define the parameters to train, including those of the pre-processing steps you added
-        if (method == 'linear'
-                and not preProcessing[i].__contains__('mrmr') and not preProcessing[i].__contains__('outliers')
-                and not preProcessing[i].__contains__('mutual') and not preProcessing[i].__contains__('PCA')):
-
-            grid_params = None
-
-        elif method == 'linear':
+        if method == 'linear':
 
             # for outliers the argument kw_args is used an need to receive dictionaries with argument names as keys
             # and values to test as values
             # example : 'outliers__kw_args': [{'below': 0.01*i, 'above': 0.01*i} for i in range(5)]
             grid_params = {
-                'outliers__kw_args': [{'below': 0.01*i, 'above': 0.01*i} for i in range(5)]
+                'outliers__kw_args': [{'below': 0.01*i, 'above': 0.01*i} for i in range(51)],
+                'select_mut__k': range(50, 58)
             }
 
         elif method == 'KNN':
@@ -266,7 +289,7 @@ if __name__ == "__main__":
             grid_params = {
                 'regression__n_neighbors': np.arange(2,30),
                 'regression__weights': ['distance', 'uniform'], #, 'uniform'
-                'regression__metric': [ 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine'],
+                'regression__metric': ['euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine'],
                 'regression__leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine','euclidean', 'manhattan', 'chebyshev'
             }
             # Best parameters : {'regression__leaf_size': 2, 'regression__metric': 'manhattan', 'regression__n_neighbors': 48, 'regression__weights': 'distance'}

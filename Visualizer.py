@@ -2,6 +2,52 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def feature_distributions(data_, keys_, visual=False):
+
+    if not visual:
+        return
+
+    binaries = np.zeros(data_.shape[1])
+    for i in range(data_.shape[1]):
+        if len(np.unique(data_[:, i])) == 2:
+            binaries[i] = 1
+        else:
+            binaries[i] = 0
+    binaries = binaries.astype(bool)
+
+    keys = keys_[np.logical_not(binaries)]
+    data = data_[:, np.logical_not(binaries)]
+
+    print(data.shape[1])
+
+    for i in range(data.shape[1]):
+        values = data[:, i]
+        values.sort()
+        counts = []
+        uniques = []
+        toEqual = values[0]
+        count = 1
+        for j in range(1, len(values)):
+            if toEqual == values[j]:
+                count += 1
+            else:
+                counts.append(count)
+                uniques.append(toEqual)
+                count = 1
+                toEqual = values[j]
+        y = np.linspace(0.0, 1.0, len(values))
+        plt.figure()
+        plt.scatter(values, y)
+        plt.title('cdf of feature : {}'.format(keys[i]))
+        plt.figure()
+        plt.scatter(np.log1p(values), y)
+        plt.title('log_cdf of feature : {}'.format(keys[i]))
+        plt.figure()
+        plt.scatter(np.array(uniques), np.array(counts)/len(values))
+        plt.title('pdf of feature : {}'.format(keys[i]))
+        plt.show()
+
+
 def visualize(data_, target_, keys_, binary_fig=True, continuous_fig=True):
 
     binaries = np.zeros(data_.shape[1])
