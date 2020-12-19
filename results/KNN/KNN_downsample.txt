@@ -1,0 +1,50 @@
+Best training result for the KNN method : 0.511
+Trained parameters : {'regression__n_neighbors': array([30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+       47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57]), 'regression__weights': ['distance', 'uniform'], 'regression__metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski', 'cosine'], 'regression__leaf_size': [2]}
+Best parameters : {'regression__leaf_size': 2, 'regression__metric': 'manhattan', 'regression__n_neighbors': 34, 'regression__weights': 'distance'}
+Testing result for the KNN method : 0.508
+
+Flop articles :
+	- Nbr in output : 1
+	- Nbr in target : 90
+	- Target flops classified as flop : 0
+	- Target flops classified as mild_success : 4
+	- Target flops classified as success : 60
+	- Target flops classified as great_success : 22
+	- Target flops classified as viral : 4
+
+Mild success articles :
+	- Nbr in output : 16
+	- Nbr in target : 1735
+	- Target mild_successes classified as flop : 1
+	- Target mild_successes classified as mild_success : 8
+	- Target mild_successes classified as success : 850
+	- Target mild_successes classified as great_success : 744
+	- Target mild_successes classified as viral : 132
+
+Success articles :
+	- Nbr in output : 1731
+	- Nbr in target : 1631
+	- Target successes classified as flop : 0
+	- Target successes classified as mild_success : 4
+	- Target successes classified as success : 657
+	- Target successes classified as great_success : 780
+	- Target successes classified as viral : 190
+
+Great success articles :
+	- Nbr in output : 1818
+	- Nbr in target : 287
+	- Target great_successes classified as flop : 0
+	- Target great_successes classified as mild_success : 0
+	- Target great_successes classified as success : 104
+	- Target great_successes classified as great_success : 150
+	- Target great_successes classified as viral : 33
+
+Viral articles :
+	- Nbr in output : 399
+	- Nbr in target : 222
+	- Target virals classified as flop : 0
+	- Target virals classified as mild_success : 0
+	- Target virals classified as success : 60
+	- Target virals classified as great_success : 122
+	- Target virals classified as viral : 40

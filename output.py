@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def printOuput(output, target):
+def printOuput(output, target, file):
 
     if len(output.shape) > 1:
         output = output[:, 0]
@@ -35,41 +35,41 @@ def printOuput(output, target):
 
     labels = ['flop', 'mild_success', 'success', 'great_success', 'viral']
 
-    print("Flop articles :\n\t"
-          "- Nbr in output : {}\n\t"
-          "- Nbr in target : {}".format(sum(output_flop), sum(target_flop)))
+    file.write("Flop articles :\n\t"
+               "- Nbr in output : {}\n\t"
+               "- Nbr in target : {}\n".format(sum(output_flop), sum(target_flop)))
     for i in range(5):
         nbr = sum(np.logical_and(target_flop, full_output[i]))
-        print("\t- Target flops classified as {} : {}".format(labels[i], nbr))
+        file.write("\t- Target flops classified as {} : {}\n".format(labels[i], nbr))
 
 
-    print("\nMild success articles :\n\t"
-          "- Nbr in output : {}\n\t"
-          "- Nbr in target : {}".format(sum(output_mild), sum(target_mild)))
+    file.write("\nMild success articles :\n\t"
+               "- Nbr in output : {}\n\t"
+               "- Nbr in target : {}\n".format(sum(output_mild), sum(target_mild)))
     for i in range(5):
         nbr = sum(np.logical_and(target_mild, full_output[i]))
-        print("\t- Target mild_successes classified as {} : {}".format(labels[i], nbr))
+        file.write("\t- Target mild_successes classified as {} : {}\n".format(labels[i], nbr))
 
 
-    print("\nSuccess articles :\n\t"
-          "- Nbr in output : {}\n\t"
-          "- Nbr in target : {}".format(sum(output_succ), sum(target_succ)))
+    file.write("\nSuccess articles :\n\t"
+               "- Nbr in output : {}\n\t"
+               "- Nbr in target : {}\n".format(sum(output_succ), sum(target_succ)))
     for i in range(5):
         nbr = sum(np.logical_and(target_succ, full_output[i]))
-        print("\t- Target successes classified as {} : {}".format(labels[i], nbr))
+        file.write("\t- Target successes classified as {} : {}\n".format(labels[i], nbr))
 
 
-    print("\nGreat success articles :\n\t"
-          "- Nbr in output : {}\n\t"
-          "- Nbr in target : {}".format(sum(output_great), sum(target_great)))
+    file.write("\nGreat success articles :\n\t"
+               "- Nbr in output : {}\n\t"
+               "- Nbr in target : {}\n".format(sum(output_great), sum(target_great)))
     for i in range(5):
         nbr = sum(np.logical_and(target_great, full_output[i]))
-        print("\t- Target great_successes classified as {} : {}".format(labels[i], nbr))
+        file.write("\t- Target great_successes classified as {} : {}\n".format(labels[i], nbr))
 
 
-    print("\nViral articles :\n\t"
-          "- Nbr in output : {}\n\t"
-          "- Nbr in target : {}".format(sum(output_viral), sum(target_viral)))
+    file.write("\nViral articles :\n\t"
+               "- Nbr in output : {}\n\t"
+               "- Nbr in target : {}\n".format(sum(output_viral), sum(target_viral)))
     for i in range(5):
         nbr = sum(np.logical_and(target_viral, full_output[i]))
-        print("\t- Target virals classified as {} : {}".format(labels[i], nbr))
+        file.write("\t- Target virals classified as {} : {}\n".format(labels[i], nbr))

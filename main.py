@@ -86,10 +86,10 @@ class ModelTrainer:
         elif modelType == 'MLP':
             self.model = MLPRegressor(random_state=self.seed, max_iter=500)
 
-    def outputClassRepartition(self):
+    def outputClassRepartition(self, file):
         output = self.model.predict(self.evalData)
         target = self.evalTarget
-        printOuput(output, target)
+        printOuput(output, target, file)
 
     # Pre-processing of the data
     def addPreProcess(self):
@@ -108,10 +108,11 @@ class ModelTrainer:
             if preProcessMethod == 'mrmr':
                 feature_corr = self.feature_correlations.copy()
                 target_corr = self.target_correlations.copy()
-                steps.append(('mrmr', MRMR(feature_corr, target_corr)))
+                steps.append(('mrmr', MRMR(feature_corr, target_corr, self.keys)))
 
             elif preProcessMethod == 'select_corr':
                 steps.append(('select_corr', Selector(score_func=np.corrcoef,
+                                                      labels=self.keys,
                                                       info_vector=self.target_correlations,
                                                       random_state=self.seed)))
 
@@ -119,6 +120,7 @@ class ModelTrainer:
             # n_components, the number of components with the highest mutual info to keep, default to 20
             elif preProcessMethod == 'select_mut':
                 steps.append(('select_mut', Selector(score_func=mutual_info_regression,
+                                                     labels=self.keys,
                                                      info_vector=self.target_muInf,
                                                      random_state=self.seed)))
 
@@ -134,22 +136,20 @@ class ModelTrainer:
 
             # PCA args :
             # n_components, number of components to identify with PCA, default to all components
-            # whiten, boolean indicating if PCA has to use whitening before applying the algorithm
-            # random_state, seed to have reproducible results
             elif preProcessMethod == 'PCA':
-                steps.append(('pca', PCA(random_state=self.seed)))
+                steps.append(('PCA', PCA(random_state=self.seed)))
 
-            # No args, always applied before the other methods !
+            # No args
             elif preProcessMethod == 'outliers':
                 steps.append(('outliers', FunctionSampler(func=remove_outliers)))
 
             # No args
             elif preProcessMethod == 'upsample':
-                steps.append(('upsampling', UpSampling()))
+                steps.append(('upsampling', UpSampling(random_state=self.seed)))
 
             # No args
             elif preProcessMethod == 'downsample':
-                steps.append(('downsampling', DownSampling()))
+                steps.append(('downsampling', DownSampling(random_state=self.seed)))
 
              # other pre-processing steps ?
             else:
@@ -231,24 +231,63 @@ if __name__ == "__main__":
     # pre-computation of mutual information matrix between features and the target (only done if needed, see below)
     target_muInf = None
 
-
     # which methods we want to train (linear, KNN, MLP), be careful about the computation time
     # example : methods = ['linear', 'KNN', 'MLP', ...]
     methods = []
-    methods.append('linear')
-    # methods.append('KNN')
-    #methods.append('MLP')
+
+    # change the number to add the method the same number of times as the number of different pre-processing
+    # pipelines you want to test
+
+    # for i in range(11):
+        # methods.append('linear')
+        # methods.append('KNN')
+        # methods.append('MLP')
 
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
+    # => sampling : upsample, downsample
+    # => transformation : standardization, outliers
+    # => selection : mrmr, select_corr, select_mut
+    # => transformation + selection : PCA, whitening
     preProcessing = []
-    preProcessing.append(['outliers', 'select_mut'])  # dummy elements in case of no pre-processing
-    # preProcessing.append(['PCA'])  # for linear regression
-    # preProcessing.append(['standardization'])  # for KNN
-    #preProcessing.append(['whitening', 'upsample'])  # for MLP
+
+    # Linear tests
+
+    # preProcessing.append([])
+    # preProcessing.append(['downsample'])
+    # preProcessing.append(['downsample', 'select_corr'])
+    # preProcessing.append(['downsample', 'standardization', 'select_corr'])
+    # preProcessing.append(['downsample', 'outliers', 'select_corr'])
+    # preProcessing.append(['downsample', 'standardization', 'outliers', 'select_corr'])
+    # preProcessing.append(['upsample'])
+    # preProcessing.append(['upsample', 'select_corr'])
+    # preProcessing.append(['upsample', 'standardization', 'select_corr'])
+    # preProcessing.append(['upsample', 'outliers', 'select_corr'])
+    # preProcessing.append(['upsample', 'standardization', 'outliers', 'select_corr'])
+
+    # KNN tests
+
+    # preProcessing.append(['standardization', 'downsample'])  # for KNN
+
+    # MLP tests
+
+    # preProcessing.append(['whitening', 'upsample'])  # for MLP
+
+    # if you want to test your methods on the log version of the data just remove the comments
+    log = False
+    # binaries = np.zeros(X1.shape[1])
+    # for j in range(X1.shape[1]):
+    #     if len(np.unique(X1[:, j])) == 2:
+    #         binaries[j] = 1
+    #     else:
+    #         binaries[j] = 0
+    # binaries = binaries.astype(bool)
+    # X1[:, np.logical_not(binaries)] = np.log(X1[:, np.logical_not(binaries)] + 2.0)
+    # X2[:, np.logical_not(binaries)] = np.log(X2[:, np.logical_not(binaries)] + 2.0)
+    # log = True
 
     for i in range(len(preProcessing)):
-        if preProcessing[i].__contains__('select_corr'):
+        if preProcessing[i].__contains__('select_corr') or preProcessing[i].__contains__('mrmr'):
 
             # pre-computation of correlation matrices between features on the whole data set and between features and
             # target for the labelled data set X1
@@ -262,7 +301,14 @@ if __name__ == "__main__":
 
     for i, method in enumerate(methods):
 
+        output_file = "results/" + method + "/" + method
+        if log:
+            output_file += "_log"
+        for step in preProcessing[i]:
+            output_file += "_" + step
+
         print("\n========== TRAINING MODEL : {} ==========".format(method))
+        print("Pre-processing steps : {}".format(preProcessing[i]))
 
         # Build the trainer
         trainer = ModelTrainer(X1, Y1, keys, method, preProcessing[i], scoreregression, feature_correlations,
@@ -279,24 +325,41 @@ if __name__ == "__main__":
             # for outliers the argument kw_args is used an need to receive dictionaries with argument names as keys
             # and values to test as values
             # example : 'outliers__kw_args': [{'below': 0.01*i, 'above': 0.01*i} for i in range(5)]
-            grid_params = {
-                'outliers__kw_args': [{'below': 0.01*i, 'above': 0.01*i} for i in range(51)],
-                'select_mut__k': range(50, 58)
-            }
+
+            # grid_params for the method, linear has no meta-parameters to tune
+            grid_params = {}
+
+            # add the arguments of the different pre-processing steps to the grid
+            if preProcessing[i].__contains__('mrmr'):
+                grid_params['mrmr__n_components'] = range(2, 59, 2)
+                grid_params['mrmr__thresh'] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            if preProcessing[i].__contains__('select_corr'):
+                grid_params['select_corr__k'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('select_mut'):
+                grid_params['select_mut__k'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('outliers'):
+                grid_params['outliers__kw_args'] = [{'below': 0.01 * k, 'above': 0.01 * j} for k in range(11) for j in range(11)]
+            if preProcessing[i].__contains__('PCA'):
+                grid_params['PCA__n_components'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('whitening'):
+                grid_params['whitening__n_components'] = range(2, 59, 2)
 
         elif method == 'KNN':
 
+            # grid_params for the method, KNN has some meta-parameters
             grid_params = {
-                'regression__n_neighbors': np.arange(2,30),
-                'regression__weights': ['distance', 'uniform'], #, 'uniform'
-                'regression__metric': ['euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine'],
-                'regression__leaf_size': [2] # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine','euclidean', 'manhattan', 'chebyshev'
+                'regression__n_neighbors': np.arange(1, 101, 2),
+                'regression__weights': ['distance'],
+                'regression__metric': ['manhattan'],  # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine'
+                'regression__leaf_size': [2]
             }
             # Best parameters : {'regression__leaf_size': 2, 'regression__metric': 'manhattan', 'regression__n_neighbors': 48, 'regression__weights': 'distance'}
             # Testing result for the KNN method : 0.528
 
             # {'metric': 'cosine', 'n_neighbors': 10, 'weights': 'uniform'}
             # 0.5008216155210505
+
+            # add the arguments of the different pre-processing steps to the grid
 
         else:
             grid_params = None
@@ -311,12 +374,24 @@ if __name__ == "__main__":
         train_result, trained_params, best_model, result = trainer.evaluate()
         print("End of evaluation.")
 
-        # Print results
+        # Save results
+        output_file += ".txt"
+        file = open(output_file, 'w+')
         if train_result != -1:
-            print("Best training result for the {} method : {:.3f}".format(method, train_result))
-            print("Trained parameters : {}".format(trained_params))
-            print("Best parameters : {}".format(best_model))
+            file.write("Best training result for the {} method : {:.3f}\n"
+                       "Trained parameters : {}\n"
+                       "Best parameters : {}\n"
+                       "Testing result for the {} method : {:.3f}\n\n"
+                       .format(method, train_result, trained_params, best_model, method, result))
+        """
+        print("Best training result for the {} method : {:.3f}".format(method, train_result))
+        print("Trained parameters : {}".format(trained_params))
+        print("Best parameters : {}".format(best_model))
         print("Testing result for the {} method : {:.3f}\n".format(method, result))
+        """
+        file.close()
+        file = open(output_file, 'a+')
 
-        # Output class repartition
-        trainer.outputClassRepartition()
+        # Output class repartition to the file
+        trainer.outputClassRepartition(file)
+        file.close()

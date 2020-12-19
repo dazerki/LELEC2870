@@ -4,9 +4,10 @@ from imblearn.base import BaseSampler
 from imblearn.under_sampling import RandomUnderSampler
 
 class DownSampling(BaseSampler):
-    def __init__(self, **kwargs):
+    def __init__(self, random_state=None, **kwargs):
         super().__init__()
-        self.sampler = RandomUnderSampler()
+        self.random_state = random_state
+        self.sampler = RandomUnderSampler(random_state=self.random_state)
         self._sampling_type = self.sampler._sampling_type
 
     def _fit_resample(self, X, y):

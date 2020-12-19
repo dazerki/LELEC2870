@@ -5,11 +5,12 @@ from sklearn.feature_selection import SelectorMixin
 
 class Selector(BaseEstimator, SelectorMixin):
 
-    def __init__(self, score_func, info_vector, k=20, random_state=1998):
+    def __init__(self, score_func, labels, info_vector, k=20, random_state=1998):
         self.score_func = score_func
         self.k = k
         self.random_state = random_state
         self.info_vector = info_vector
+        self.labels = labels
 
     def fit(self, X, y):
 

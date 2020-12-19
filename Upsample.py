@@ -4,9 +4,10 @@ from imblearn.base import BaseSampler
 from imblearn.over_sampling import RandomOverSampler
 
 class UpSampling(BaseSampler):
-    def __init__(self, **kwargs):
+    def __init__(self, random_state=None, **kwargs):
         super().__init__()
-        self.sampler = RandomOverSampler()
+        self.random_state = random_state
+        self.sampler = RandomOverSampler(random_state=self.random_state)
         self._sampling_type = self.sampler._sampling_type
 
     def _fit_resample(self, X, y):
