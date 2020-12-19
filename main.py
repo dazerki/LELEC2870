@@ -348,10 +348,9 @@ if __name__ == "__main__":
 
             # grid_params for the method, KNN has some meta-parameters
             grid_params = {
-                'regression__n_neighbors': np.arange(1, 101, 2),
-                'regression__weights': ['distance'],
-                'regression__metric': ['manhattan'],  # 'euclidean', 'manhattan', 'chebyshev','minkowski', 'cosine'
-                'regression__leaf_size': [2]
+                'regression__n_neighbors': np.arange(30, 55, 2),
+                'regression__weights': ['distance', 'uniform'],
+                'regression__metric': ['manhattan', 'euclidian'],
             }
             # Best parameters : {'regression__leaf_size': 2, 'regression__metric': 'manhattan', 'regression__n_neighbors': 48, 'regression__weights': 'distance'}
             # Testing result for the KNN method : 0.528
@@ -360,6 +359,46 @@ if __name__ == "__main__":
             # 0.5008216155210505
 
             # add the arguments of the different pre-processing steps to the grid
+
+            if preProcessing[i].__contains__('mrmr'):
+                grid_params['mrmr__n_components'] = range(2, 59, 2)
+                grid_params['mrmr__thresh'] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            if preProcessing[i].__contains__('select_corr'):
+                grid_params['select_corr__k'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('select_mut'):
+                grid_params['select_mut__k'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('outliers'):
+                grid_params['outliers__kw_args'] = [{'below': 0.01 * k, 'above': 0.01 * j} for k in range(11) for j in range(11)]
+            if preProcessing[i].__contains__('PCA'):
+                grid_params['PCA__n_components'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('whitening'):
+                grid_params['whitening__n_components'] = range(2, 59, 2)
+
+        elif method == 'MLP':
+
+            # grid_params for the method, KNN has some meta-parameters
+            grid_params = {
+                'hidden_layer_sizes': [(100,), (100, 100), (50, 50), (150,)],
+                'activation': ['logistic', 'tanh', 'relu'],
+                'alpha': [0.0001, 0.001, 0.01],
+                'learning_rate_init': [0.0005, 0.001, 0.01],
+                'random_state': [seed],
+                'verbose': [True],
+            }
+
+            if preProcessing[i].__contains__('mrmr'):
+                grid_params['mrmr__n_components'] = range(2, 59, 2)
+                grid_params['mrmr__thresh'] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            if preProcessing[i].__contains__('select_corr'):
+                grid_params['select_corr__k'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('select_mut'):
+                grid_params['select_mut__k'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('outliers'):
+                grid_params['outliers__kw_args'] = [{'below': 0.01 * k, 'above': 0.01 * j} for k in range(11) for j in range(11)]
+            if preProcessing[i].__contains__('PCA'):
+                grid_params['PCA__n_components'] = range(2, 59, 2)
+            if preProcessing[i].__contains__('whitening'):
+                grid_params['whitening__n_components'] = range(2, 59, 2)
 
         else:
             grid_params = None
