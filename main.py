@@ -220,7 +220,7 @@ if __name__ == "__main__":
     #           if continuous_fig is true it will output 11 figures
     #           if both are true it will output 26 figures
     classRepartition(Y1)  # print number of articles per class
-    visualize(X1, Y1, keys, binary_fig=False, continuous_fig=False)  # print some figures to visualize the data
+    visualize(X1, Y1, keys, binary_fig=True, continuous_fig=True)  # print some figures to visualize the data
     feature_distributions(X1, keys, visual=False)  # turn visual to true to see the figures (3 figures * 44 features)
 
     # which ratio of the data set we use for testing

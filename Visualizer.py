@@ -78,8 +78,9 @@ def visualize(data_, target_, keys_, binary_fig=True, continuous_fig=True):
         data_weekend = data_binary[:, -1]
 
         all = np.array([flop, mild_success, success, great_success, viral])
-        labels = np.array(['flops', 'milds', 'succs', 'greats', 'virals'])
-        labels_pourc = np.array(['% flops/day', '% milds/day', '% succs/day', '% greats/day', '% virals/day'])
+        labels = np.array(['Subject repartion of flop articles', 'Subject repartition of mild success articles', 'Subject repartition of success articles', 'Subject repartition of great articles', 'Subject repartition of viral articles'])
+        labels_day = np.array(['Day repartion of flop articles', 'Day repartition of mild success articles', 'Day repartition of success articles', 'Day repartition of great articles', 'Day repartition of viral articles'])
+        labels_weekend = np.array(['Weekend/weekday repartion of flop articles', 'Weekend/weekday repartition of mild success articles', 'Weekend/weekday repartition of success articles', 'Weekend/weekday repartition of great articles', 'Weekend/weekday repartition of viral articles'])
 
         for i in range(5):
             plt.figure(figsize=(5, 4))
@@ -92,7 +93,9 @@ def visualize(data_, target_, keys_, binary_fig=True, continuous_fig=True):
             numbers = np.array([first, second, third, fourth, fifth, sixth])
             plt.bar(range(0, 6), numbers, tick_label=keys_channel)
             plt.xticks(range(0, 6), keys_channel, rotation=45)
+            plt.ylabel('Fraction of the articles')
             plt.title(labels[i])
+            plt.tight_layout()
         plt.show()
 
         for i in range(5):
@@ -107,7 +110,9 @@ def visualize(data_, target_, keys_, binary_fig=True, continuous_fig=True):
             numbers = np.array([first, second, third, fourth, fifth, sixth, seventh])
             plt.bar(range(0, 7), numbers)
             plt.xticks(range(0, 7), keys_day, rotation=45)
-            plt.title(labels[i])
+            plt.ylabel('Fraction of the articles')
+            plt.title(labels_day[i])
+            plt.tight_layout()
         plt.show()
 
         for i in range(5):
@@ -131,13 +136,29 @@ def visualize(data_, target_, keys_, binary_fig=True, continuous_fig=True):
             numbers = np.array([first, second])
             plt.bar(range(0, 2), numbers)
             plt.xticks(range(0, 2), ['weekday', 'weekend'], rotation=45)
-            plt.title(labels_pourc[i])
+            plt.ylabel('Pourcentage on all the articles (%)')
+            plt.title(labels_weekend[i])
+            plt.tight_layout()
         plt.show()
 
     if continuous_fig:
 
         data = data[:, np.logical_not(binaries)]
         keys = keys_[np.logical_not(binaries)]
+        titles_continues = ['Number of words in the article', 'Number of words in the article','Rate of unique words', \
+                            'Rate of non-stop words ', 'Rate of unique non-stop words', 'Number of links' \
+                            'Number of Mashable articles links', 'Number of images', 'Number of videos', \
+                            'Average word length','Number of keywords', 'Worst key word minimum', 'Worst key word maximum', \
+                            'Worst keyword average', 'Best keyword minimum', 'Best keyword maximum', 'Bets keyword average', \
+                            'Average keyword minimum', 'Average keyword maximum', 'Average keyword average', \
+                            'Minimum of shares of Mashable links', 'Maximum of shares of Mashable links', 'Average of shares of Mashable links', \
+                            'Closeness to first LDA topic','Closeness to second LDA topic','Closeness to third LDA topic', \
+                            'Closeness to first fourth topic', 'Closeness to fifth LDA topic', 'Article text subjectivity score', \
+                            'Article text polarity score', 'Rate of positive words', 'Rate of negative words', \
+                             'Positive words rate among non-neutral words', 'Negative words rate among non-neutral words', \
+                             'Average polarity of positive words', 'Minimum polarity of positive words', 'Maximum polarity of positive words', \
+                             'Average polarity of negative words', 'Minimum polarity of negative words', 'Maximum polarity of negative words', \
+                             'Title subjectivity', 'Title sentiment polarity', 'Title subjectivity', 'Absolute title sentiment polarity']
 
         colors = np.full(len(target), "yellow")
         colors[flop] = "blue"
@@ -156,8 +177,9 @@ def visualize(data_, target_, keys_, binary_fig=True, continuous_fig=True):
         for i in range(int(np.ceil(nb_feat / size))):
             fig, axs = plt.subplots(nrows=nrows, ncols=ncols)
             for j in range(min(size, nb_feat - size * i)):
-                axs[j // ncols, j % ncols].scatter(target, data[:, i * size + j], c=colors)
-                axs[j // ncols, j % ncols].set_title(keys[i * size + j])
+                graph = axs[j // ncols, j % ncols].scatter(target, data[:, i * size + j], c=colors)
+                axs[j // ncols, j % ncols].set_title(titles_continues[i * size + j])
+                axs[j // ncols, j % ncols].set_xlabel('Target: Number of article Mashable shares')
             plt.show()
 
         # each feature PER CLASS wrt the target
@@ -178,7 +200,7 @@ def visualize(data_, target_, keys_, binary_fig=True, continuous_fig=True):
         colors2 = ["blue", "green", "yellow", "orange", "red"]
         data_per_label = np.array([flops, mild_successes, successes, great_successes, virals])
         target_per_label = np.array(
-            [flops_target, mild_successes_target, successes_target, great_successes_target, virals_target])        
+            [flops_target, mild_successes_target, successes_target, great_successes_target, virals_target])
 
         for i in range(len(data[0])):
             fig, axs = plt.subplots(nrows=2, ncols=3)

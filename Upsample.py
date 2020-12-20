@@ -14,9 +14,9 @@ class UpSampling(BaseSampler):
         X_new = np.concatenate((X, y.reshape(-1, 1)), axis=1)
         y_new = np.zeros(y.shape)
         y_new[np.where(y >= 10000)] = 4
-        y_new[np.where(y >= 5000)] = 3
-        y_new[np.where(y >= 1400)] = 2
-        y_new[np.where(y >= 500)] = 1
+        y_new[np.where(np.logical_and(y >= 5000, y<10000))] = 3
+        y_new[np.where(np.logical_and(y >= 1400,y<5000))] = 2
+        y_new[np.where(np.logical_and(y >= 500,y<1400))] = 1
         y_new[np.where(y < 500)] = 0
 
         X_res_up, y_res_up = self.sampler.fit_resample(X_new, y_new)
