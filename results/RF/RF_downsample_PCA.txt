@@ -1,0 +1,49 @@
+Best training result for the RF method : 0.534
+Trained parameters : {'regression__n_estimators': [100], 'PCA__n_components': range(10, 58, 5)}
+Best parameters : {'PCA__n_components': 15, 'regression__n_estimators': 100}
+Testing result for the RF method : 0.529
+
+Flop articles :
+	- Nbr in output : 1
+	- Nbr in target : 90
+	- Target flops classified as flop : 0
+	- Target flops classified as mild_success : 8
+	- Target flops classified as success : 43
+	- Target flops classified as great_success : 31
+	- Target flops classified as viral : 8
+
+Mild success articles :
+	- Nbr in output : 110
+	- Nbr in target : 1735
+	- Target mild_successes classified as flop : 1
+	- Target mild_successes classified as mild_success : 77
+	- Target mild_successes classified as success : 764
+	- Target mild_successes classified as great_success : 651
+	- Target mild_successes classified as viral : 242
+
+Success articles :
+	- Nbr in output : 1472
+	- Nbr in target : 1631
+	- Target successes classified as flop : 0
+	- Target successes classified as mild_success : 19
+	- Target successes classified as success : 550
+	- Target successes classified as great_success : 705
+	- Target successes classified as viral : 357
+
+Great success articles :
+	- Nbr in output : 1580
+	- Nbr in target : 287
+	- Target great_successes classified as flop : 0
+	- Target great_successes classified as mild_success : 5
+	- Target great_successes classified as success : 72
+	- Target great_successes classified as great_success : 114
+	- Target great_successes classified as viral : 96
+
+Viral articles :
+	- Nbr in output : 802
+	- Nbr in target : 222
+	- Target virals classified as flop : 0
+	- Target virals classified as mild_success : 1
+	- Target virals classified as success : 43
+	- Target virals classified as great_success : 79
+	- Target virals classified as viral : 99

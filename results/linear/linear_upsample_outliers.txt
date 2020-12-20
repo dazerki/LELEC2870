@@ -1,0 +1,49 @@
+Best training result for the linear method : 0.470
+Trained parameters : {'outliers__kw_args': [{'below': 0.0, 'above': 0.0}, {'below': 0.0, 'above': 0.01}, {'below': 0.0, 'above': 0.02}, {'below': 0.0, 'above': 0.03}, {'below': 0.0, 'above': 0.04}, {'below': 0.0, 'above': 0.05}, {'below': 0.0, 'above': 0.06}, {'below': 0.0, 'above': 0.07}, {'below': 0.0, 'above': 0.08}, {'below': 0.0, 'above': 0.09}, {'below': 0.0, 'above': 0.1}, {'below': 0.01, 'above': 0.0}, {'below': 0.01, 'above': 0.01}, {'below': 0.01, 'above': 0.02}, {'below': 0.01, 'above': 0.03}, {'below': 0.01, 'above': 0.04}, {'below': 0.01, 'above': 0.05}, {'below': 0.01, 'above': 0.06}, {'below': 0.01, 'above': 0.07}, {'below': 0.01, 'above': 0.08}, {'below': 0.01, 'above': 0.09}, {'below': 0.01, 'above': 0.1}, {'below': 0.02, 'above': 0.0}, {'below': 0.02, 'above': 0.01}, {'below': 0.02, 'above': 0.02}, {'below': 0.02, 'above': 0.03}, {'below': 0.02, 'above': 0.04}, {'below': 0.02, 'above': 0.05}, {'below': 0.02, 'above': 0.06}, {'below': 0.02, 'above': 0.07}, {'below': 0.02, 'above': 0.08}, {'below': 0.02, 'above': 0.09}, {'below': 0.02, 'above': 0.1}, {'below': 0.03, 'above': 0.0}, {'below': 0.03, 'above': 0.01}, {'below': 0.03, 'above': 0.02}, {'below': 0.03, 'above': 0.03}, {'below': 0.03, 'above': 0.04}, {'below': 0.03, 'above': 0.05}, {'below': 0.03, 'above': 0.06}, {'below': 0.03, 'above': 0.07}, {'below': 0.03, 'above': 0.08}, {'below': 0.03, 'above': 0.09}, {'below': 0.03, 'above': 0.1}, {'below': 0.04, 'above': 0.0}, {'below': 0.04, 'above': 0.01}, {'below': 0.04, 'above': 0.02}, {'below': 0.04, 'above': 0.03}, {'below': 0.04, 'above': 0.04}, {'below': 0.04, 'above': 0.05}, {'below': 0.04, 'above': 0.06}, {'below': 0.04, 'above': 0.07}, {'below': 0.04, 'above': 0.08}, {'below': 0.04, 'above': 0.09}, {'below': 0.04, 'above': 0.1}, {'below': 0.05, 'above': 0.0}, {'below': 0.05, 'above': 0.01}, {'below': 0.05, 'above': 0.02}, {'below': 0.05, 'above': 0.03}, {'below': 0.05, 'above': 0.04}, {'below': 0.05, 'above': 0.05}, {'below': 0.05, 'above': 0.06}, {'below': 0.05, 'above': 0.07}, {'below': 0.05, 'above': 0.08}, {'below': 0.05, 'above': 0.09}, {'below': 0.05, 'above': 0.1}, {'below': 0.06, 'above': 0.0}, {'below': 0.06, 'above': 0.01}, {'below': 0.06, 'above': 0.02}, {'below': 0.06, 'above': 0.03}, {'below': 0.06, 'above': 0.04}, {'below': 0.06, 'above': 0.05}, {'below': 0.06, 'above': 0.06}, {'below': 0.06, 'above': 0.07}, {'below': 0.06, 'above': 0.08}, {'below': 0.06, 'above': 0.09}, {'below': 0.06, 'above': 0.1}, {'below': 0.07, 'above': 0.0}, {'below': 0.07, 'above': 0.01}, {'below': 0.07, 'above': 0.02}, {'below': 0.07, 'above': 0.03}, {'below': 0.07, 'above': 0.04}, {'below': 0.07, 'above': 0.05}, {'below': 0.07, 'above': 0.06}, {'below': 0.07, 'above': 0.07}, {'below': 0.07, 'above': 0.08}, {'below': 0.07, 'above': 0.09}, {'below': 0.07, 'above': 0.1}, {'below': 0.08, 'above': 0.0}, {'below': 0.08, 'above': 0.01}, {'below': 0.08, 'above': 0.02}, {'below': 0.08, 'above': 0.03}, {'below': 0.08, 'above': 0.04}, {'below': 0.08, 'above': 0.05}, {'below': 0.08, 'above': 0.06}, {'below': 0.08, 'above': 0.07}, {'below': 0.08, 'above': 0.08}, {'below': 0.08, 'above': 0.09}, {'below': 0.08, 'above': 0.1}, {'below': 0.09, 'above': 0.0}, {'below': 0.09, 'above': 0.01}, {'below': 0.09, 'above': 0.02}, {'below': 0.09, 'above': 0.03}, {'below': 0.09, 'above': 0.04}, {'below': 0.09, 'above': 0.05}, {'below': 0.09, 'above': 0.06}, {'below': 0.09, 'above': 0.07}, {'below': 0.09, 'above': 0.08}, {'below': 0.09, 'above': 0.09}, {'below': 0.09, 'above': 0.1}, {'below': 0.1, 'above': 0.0}, {'below': 0.1, 'above': 0.01}, {'below': 0.1, 'above': 0.02}, {'below': 0.1, 'above': 0.03}, {'below': 0.1, 'above': 0.04}, {'below': 0.1, 'above': 0.05}, {'below': 0.1, 'above': 0.06}, {'below': 0.1, 'above': 0.07}, {'below': 0.1, 'above': 0.08}, {'below': 0.1, 'above': 0.09}, {'below': 0.1, 'above': 0.1}]}
+Best parameters : {'outliers__kw_args': {'below': 0.1, 'above': 0.0}}
+Testing result for the linear method : 0.457
+
+Flop articles :
+	- Nbr in output : 170
+	- Nbr in target : 90
+	- Target flops classified as flop : 7
+	- Target flops classified as mild_success : 38
+	- Target flops classified as success : 42
+	- Target flops classified as great_success : 3
+	- Target flops classified as viral : 0
+
+Mild success articles :
+	- Nbr in output : 839
+	- Nbr in target : 1735
+	- Target mild_successes classified as flop : 102
+	- Target mild_successes classified as mild_success : 508
+	- Target mild_successes classified as success : 1048
+	- Target mild_successes classified as great_success : 75
+	- Target mild_successes classified as viral : 2
+
+Success articles :
+	- Nbr in output : 2628
+	- Nbr in target : 1631
+	- Target successes classified as flop : 50
+	- Target successes classified as mild_success : 241
+	- Target successes classified as success : 1171
+	- Target successes classified as great_success : 163
+	- Target successes classified as viral : 6
+
+Great success articles :
+	- Nbr in output : 320
+	- Nbr in target : 287
+	- Target great_successes classified as flop : 5
+	- Target great_successes classified as mild_success : 36
+	- Target great_successes classified as success : 219
+	- Target great_successes classified as great_success : 27
+	- Target great_successes classified as viral : 0
+
+Viral articles :
+	- Nbr in output : 8
+	- Nbr in target : 222
+	- Target virals classified as flop : 6
+	- Target virals classified as mild_success : 16
+	- Target virals classified as success : 148
+	- Target virals classified as great_success : 52
+	- Target virals classified as viral : 0

@@ -16,6 +16,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import mutual_info_regression
+from sklearn.ensemble import RandomForestRegressor
 
 # imblearn imports
 from imblearn.pipeline import Pipeline
@@ -29,6 +30,7 @@ from Upsample import UpSampling
 from Downsample import DownSampling
 from output import printOuput
 from Visualizer import visualize, feature_distributions
+from postProcessingGraphs import output_results
 
 
 def scoref1(ytrue, ypred, th):
@@ -248,6 +250,7 @@ if __name__ == "__main__":
         # methods.append('linear')
     methods.append('KNN')
     # methods.append('MLP')
+    # methods.append('RF')
 
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
@@ -287,7 +290,7 @@ if __name__ == "__main__":
 
     # Random Forest tests
 
-    # preProcessing.append(['upsample'])
+    # preProcessing.append(['downsample'])
 
     # if you want to test your methods on the log version of the data just remove the comments
     log = False
@@ -435,22 +438,11 @@ if __name__ == "__main__":
 
             }
 
-            if preProcessing[i].__contains__('mrmr'):
-                grid_params['mrmr__n_components'] = range(2, 59, 2)
-
-                grid_params['mrmr__thresh'] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-            if preProcessing[i].__contains__('select_corr'):
-                grid_params['select_corr__k'] = range(2, 59, 2)
-
-            if preProcessing[i].__contains__('select_mut'):
-                grid_params['select_mut__k'] = range(2, 59, 2)
-
             if preProcessing[i].__contains__('outliers'):
-                grid_params['outliers__kw_args'] = [{'above': 0.05 * j} for j in range(11)]
+                grid_params['outliers__kw_args'] = [{'above': 0.01 * j} for j in range(11)]
 
             if preProcessing[i].__contains__('PCA'):
-                grid_params['PCA__n_components'] = range(2, 59, 2)
+                grid_params['PCA__n_components'] = range(10, 58, 5)
 
             if preProcessing[i].__contains__('whitening'):
                 grid_params['whitening__n_components'] = range(2, 59, 2)

@@ -1,0 +1,49 @@
+Best training result for the RF method : 0.532
+Trained parameters : {'regression__n_estimators': [100], 'outliers__kw_args': [{'above': 0.0}, {'above': 0.01}, {'above': 0.02}, {'above': 0.03}, {'above': 0.04}, {'above': 0.05}, {'above': 0.06}, {'above': 0.07}, {'above': 0.08}, {'above': 0.09}, {'above': 0.1}]}
+Best parameters : {'outliers__kw_args': {'above': 0.01}, 'regression__n_estimators': 100}
+Testing result for the RF method : 0.526
+
+Flop articles :
+	- Nbr in output : 1
+	- Nbr in target : 90
+	- Target flops classified as flop : 0
+	- Target flops classified as mild_success : 8
+	- Target flops classified as success : 53
+	- Target flops classified as great_success : 22
+	- Target flops classified as viral : 7
+
+Mild success articles :
+	- Nbr in output : 147
+	- Nbr in target : 1735
+	- Target mild_successes classified as flop : 1
+	- Target mild_successes classified as mild_success : 96
+	- Target mild_successes classified as success : 826
+	- Target mild_successes classified as great_success : 633
+	- Target mild_successes classified as viral : 179
+
+Success articles :
+	- Nbr in output : 1616
+	- Nbr in target : 1631
+	- Target successes classified as flop : 0
+	- Target successes classified as mild_success : 39
+	- Target successes classified as success : 615
+	- Target successes classified as great_success : 716
+	- Target successes classified as viral : 261
+
+Great success articles :
+	- Nbr in output : 1616
+	- Nbr in target : 287
+	- Target great_successes classified as flop : 0
+	- Target great_successes classified as mild_success : 3
+	- Target great_successes classified as success : 81
+	- Target great_successes classified as great_success : 133
+	- Target great_successes classified as viral : 70
+
+Viral articles :
+	- Nbr in output : 585
+	- Nbr in target : 222
+	- Target virals classified as flop : 0
+	- Target virals classified as mild_success : 1
+	- Target virals classified as success : 41
+	- Target virals classified as great_success : 112
+	- Target virals classified as viral : 68
