@@ -220,7 +220,7 @@ if __name__ == "__main__":
     #           if continuous_fig is true it will output 11 figures
     #           if both are true it will output 26 figures
     classRepartition(Y1)  # print number of articles per class
-    visualize(X1, Y1, keys, binary_fig=True, continuous_fig=True)  # print some figures to visualize the data
+    visualize(X1, Y1, keys, binary_fig=False, continuous_fig=False)  # print some figures to visualize the data
     feature_distributions(X1, keys, visual=False)  # turn visual to true to see the figures (3 figures * 44 features)
 
     # which ratio of the data set we use for testing
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
     # KNN tests
 
-    preProcessing.append(['standardization','upsample'])  # for KNN
+    preProcessing.append(['downsample','standardization', 'select_mut'])  # for KNN
 
     # MLP tests
     # preProcessing.append([])
@@ -372,7 +372,7 @@ if __name__ == "__main__":
 
             # grid_params for the method, KNN has some meta-parameters
             grid_params = {
-                'regression__n_neighbors': np.arange(30, 50, 2),
+                'regression__n_neighbors': [36], #np.arange(30, 50, 2),
                 'regression__weights': ['distance', 'uniform'],
                 'regression__metric': ['manhattan', 'euclidean'],
             }
@@ -469,8 +469,18 @@ if __name__ == "__main__":
         train_result, trained_params, best_model, result = trainer.evaluate()
         print("End of evaluation.")
 
+        predictions_Y2 = trainer.model.predict(X2)
+
+        Y2_file = "Y2.csv"
+        file = open(Y2_file, 'a+')
+        for i in predictions_Y2:
+            file.write(str(i)+"\n")
+
+
+        file.close()
         # Save results
         output_file += ".txt"
+
         file = open(output_file, 'w+')
         if train_result != -1:
             file.write("Best training result for the {} method : {:.3f}\n"
