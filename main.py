@@ -166,7 +166,7 @@ class ModelTrainer:
             self.model = GridSearchCV(
                 self.model,
                 parametersGrid,
-                verbose=0,
+                verbose=1,
                 cv=3,
                 n_jobs=-1,
                 scoring=score_func
@@ -174,6 +174,10 @@ class ModelTrainer:
 
         if self.modelType == 'MLP':
             self.model.fit(self.data, np.ravel(self.target))
+            if parametersGrid is not None:
+                self.training_score = self.model.best_score_
+                self.best_model = self.model.best_params_
+                self.trained_params = self.model.param_grid
         else:
             self.model.fit(self.data, self.target)
             if parametersGrid is not None:
@@ -240,8 +244,8 @@ if __name__ == "__main__":
 
     # for i in range(11):
         # methods.append('linear')
-        # methods.append('KNN')
-        # methods.append('MLP')
+    methods.append('KNN')
+    # methods.append('MLP')
 
     # which pre-processing steps to apply for each method : one list per method to allow to specify more than one
     # pre-processing step for each method
@@ -267,9 +271,15 @@ if __name__ == "__main__":
 
     # KNN tests
 
-    # preProcessing.append(['standardization', 'downsample'])  # for KNN
+    preProcessing.append(['standardization','upsample'])  # for KNN
 
     # MLP tests
+    # preProcessing.append([])
+    # preProcessing.append(['PCA']) avorté trop long à refaire
+    # preProcessing.append(['whitening']) à refaire avec les 3 alpha
+    # preProcessing.append(['downsample', 'whitening'])
+    # preProcessing.append(['downsample', 'PCA'])
+    # preProcessing.append(['upsample', 'whitening'])
 
     # preProcessing.append(['whitening', 'upsample'])  # for MLP
 
@@ -331,7 +341,7 @@ if __name__ == "__main__":
 
             # add the arguments of the different pre-processing steps to the grid
             if preProcessing[i].__contains__('mrmr'):
-                grid_params['mrmr__n_components'] = range(2, 59, 2)
+                grid_params['mrmr__n_components'] = range(2, 59, 6)
                 grid_params['mrmr__thresh'] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             if preProcessing[i].__contains__('select_corr'):
                 grid_params['select_corr__k'] = range(2, 59, 2)
@@ -348,9 +358,9 @@ if __name__ == "__main__":
 
             # grid_params for the method, KNN has some meta-parameters
             grid_params = {
-                'regression__n_neighbors': np.arange(30, 55, 2),
+                'regression__n_neighbors': np.arange(30, 50, 2),
                 'regression__weights': ['distance', 'uniform'],
-                'regression__metric': ['manhattan', 'euclidian'],
+                'regression__metric': ['manhattan', 'euclidean'],
             }
             # Best parameters : {'regression__leaf_size': 2, 'regression__metric': 'manhattan', 'regression__n_neighbors': 48, 'regression__weights': 'distance'}
             # Testing result for the KNN method : 0.528
@@ -366,7 +376,7 @@ if __name__ == "__main__":
             if preProcessing[i].__contains__('select_corr'):
                 grid_params['select_corr__k'] = range(2, 59, 2)
             if preProcessing[i].__contains__('select_mut'):
-                grid_params['select_mut__k'] = range(2, 59, 2)
+                grid_params['select_mut__k'] = range(2, 59, 6)
             if preProcessing[i].__contains__('outliers'):
                 grid_params['outliers__kw_args'] = [{'below': 0.01 * k, 'above': 0.01 * j} for k in range(11) for j in range(11)]
             if preProcessing[i].__contains__('PCA'):
@@ -378,12 +388,12 @@ if __name__ == "__main__":
 
             # grid_params for the method, KNN has some meta-parameters
             grid_params = {
-                'hidden_layer_sizes': [(100,), (100, 100), (50, 50), (150,)],
-                'activation': ['logistic', 'tanh', 'relu'],
-                'alpha': [0.0001, 0.001, 0.01],
-                'learning_rate_init': [0.0005, 0.001, 0.01],
-                'random_state': [seed],
-                'verbose': [True],
+                'regression__hidden_layer_sizes': [(50,50), (75, 75)],  #[(100,), (100, 100), (50, 50), (150,)],
+                'regression__activation': ['relu'],
+                'regression__alpha': [ 0.0001, 0.00005],
+                'regression__learning_rate_init': [0.0001, 0.0005, 0.001,],
+                'regression__random_state': [seed],
+                'regression__verbose': [False],
             }
 
             if preProcessing[i].__contains__('mrmr'):
@@ -396,9 +406,9 @@ if __name__ == "__main__":
             if preProcessing[i].__contains__('outliers'):
                 grid_params['outliers__kw_args'] = [{'below': 0.01 * k, 'above': 0.01 * j} for k in range(11) for j in range(11)]
             if preProcessing[i].__contains__('PCA'):
-                grid_params['PCA__n_components'] = range(2, 59, 2)
+                grid_params['PCA__n_components'] = range(2, 59, 5)
             if preProcessing[i].__contains__('whitening'):
-                grid_params['whitening__n_components'] = range(2, 59, 2)
+                grid_params['whitening__n_components'] = range(8, 16, 2)
 
         else:
             grid_params = None
@@ -422,12 +432,12 @@ if __name__ == "__main__":
                        "Best parameters : {}\n"
                        "Testing result for the {} method : {:.3f}\n\n"
                        .format(method, train_result, trained_params, best_model, method, result))
-        """
+
         print("Best training result for the {} method : {:.3f}".format(method, train_result))
         print("Trained parameters : {}".format(trained_params))
         print("Best parameters : {}".format(best_model))
         print("Testing result for the {} method : {:.3f}\n".format(method, result))
-        """
+
         file.close()
         file = open(output_file, 'a+')
 
