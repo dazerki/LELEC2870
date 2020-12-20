@@ -1,0 +1,49 @@
+Best training result for the linear method : 0.535
+Trained parameters : {'mrmr__n_components': range(2, 59, 2), 'mrmr__thresh': [0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 'outliers__kw_args': [{'below': 0.0, 'above': 0.0}, {'below': 0.0, 'above': 0.01}, {'below': 0.0, 'above': 0.02}, {'below': 0.0, 'above': 0.03}, {'below': 0.0, 'above': 0.04}, {'below': 0.0, 'above': 0.05}, {'below': 0.0, 'above': 0.06}, {'below': 0.0, 'above': 0.07}, {'below': 0.0, 'above': 0.08}, {'below': 0.0, 'above': 0.09}, {'below': 0.0, 'above': 0.1}, {'below': 0.01, 'above': 0.0}, {'below': 0.01, 'above': 0.01}, {'below': 0.01, 'above': 0.02}, {'below': 0.01, 'above': 0.03}, {'below': 0.01, 'above': 0.04}, {'below': 0.01, 'above': 0.05}, {'below': 0.01, 'above': 0.06}, {'below': 0.01, 'above': 0.07}, {'below': 0.01, 'above': 0.08}, {'below': 0.01, 'above': 0.09}, {'below': 0.01, 'above': 0.1}, {'below': 0.02, 'above': 0.0}, {'below': 0.02, 'above': 0.01}, {'below': 0.02, 'above': 0.02}, {'below': 0.02, 'above': 0.03}, {'below': 0.02, 'above': 0.04}, {'below': 0.02, 'above': 0.05}, {'below': 0.02, 'above': 0.06}, {'below': 0.02, 'above': 0.07}, {'below': 0.02, 'above': 0.08}, {'below': 0.02, 'above': 0.09}, {'below': 0.02, 'above': 0.1}, {'below': 0.03, 'above': 0.0}, {'below': 0.03, 'above': 0.01}, {'below': 0.03, 'above': 0.02}, {'below': 0.03, 'above': 0.03}, {'below': 0.03, 'above': 0.04}, {'below': 0.03, 'above': 0.05}, {'below': 0.03, 'above': 0.06}, {'below': 0.03, 'above': 0.07}, {'below': 0.03, 'above': 0.08}, {'below': 0.03, 'above': 0.09}, {'below': 0.03, 'above': 0.1}, {'below': 0.04, 'above': 0.0}, {'below': 0.04, 'above': 0.01}, {'below': 0.04, 'above': 0.02}, {'below': 0.04, 'above': 0.03}, {'below': 0.04, 'above': 0.04}, {'below': 0.04, 'above': 0.05}, {'below': 0.04, 'above': 0.06}, {'below': 0.04, 'above': 0.07}, {'below': 0.04, 'above': 0.08}, {'below': 0.04, 'above': 0.09}, {'below': 0.04, 'above': 0.1}, {'below': 0.05, 'above': 0.0}, {'below': 0.05, 'above': 0.01}, {'below': 0.05, 'above': 0.02}, {'below': 0.05, 'above': 0.03}, {'below': 0.05, 'above': 0.04}, {'below': 0.05, 'above': 0.05}, {'below': 0.05, 'above': 0.06}, {'below': 0.05, 'above': 0.07}, {'below': 0.05, 'above': 0.08}, {'below': 0.05, 'above': 0.09}, {'below': 0.05, 'above': 0.1}, {'below': 0.06, 'above': 0.0}, {'below': 0.06, 'above': 0.01}, {'below': 0.06, 'above': 0.02}, {'below': 0.06, 'above': 0.03}, {'below': 0.06, 'above': 0.04}, {'below': 0.06, 'above': 0.05}, {'below': 0.06, 'above': 0.06}, {'below': 0.06, 'above': 0.07}, {'below': 0.06, 'above': 0.08}, {'below': 0.06, 'above': 0.09}, {'below': 0.06, 'above': 0.1}, {'below': 0.07, 'above': 0.0}, {'below': 0.07, 'above': 0.01}, {'below': 0.07, 'above': 0.02}, {'below': 0.07, 'above': 0.03}, {'below': 0.07, 'above': 0.04}, {'below': 0.07, 'above': 0.05}, {'below': 0.07, 'above': 0.06}, {'below': 0.07, 'above': 0.07}, {'below': 0.07, 'above': 0.08}, {'below': 0.07, 'above': 0.09}, {'below': 0.07, 'above': 0.1}, {'below': 0.08, 'above': 0.0}, {'below': 0.08, 'above': 0.01}, {'below': 0.08, 'above': 0.02}, {'below': 0.08, 'above': 0.03}, {'below': 0.08, 'above': 0.04}, {'below': 0.08, 'above': 0.05}, {'below': 0.08, 'above': 0.06}, {'below': 0.08, 'above': 0.07}, {'below': 0.08, 'above': 0.08}, {'below': 0.08, 'above': 0.09}, {'below': 0.08, 'above': 0.1}, {'below': 0.09, 'above': 0.0}, {'below': 0.09, 'above': 0.01}, {'below': 0.09, 'above': 0.02}, {'below': 0.09, 'above': 0.03}, {'below': 0.09, 'above': 0.04}, {'below': 0.09, 'above': 0.05}, {'below': 0.09, 'above': 0.06}, {'below': 0.09, 'above': 0.07}, {'below': 0.09, 'above': 0.08}, {'below': 0.09, 'above': 0.09}, {'below': 0.09, 'above': 0.1}, {'below': 0.1, 'above': 0.0}, {'below': 0.1, 'above': 0.01}, {'below': 0.1, 'above': 0.02}, {'below': 0.1, 'above': 0.03}, {'below': 0.1, 'above': 0.04}, {'below': 0.1, 'above': 0.05}, {'below': 0.1, 'above': 0.06}, {'below': 0.1, 'above': 0.07}, {'below': 0.1, 'above': 0.08}, {'below': 0.1, 'above': 0.09}, {'below': 0.1, 'above': 0.1}]}
+Best parameters : {'mrmr__n_components': 36, 'mrmr__thresh': 0.9, 'outliers__kw_args': {'below': 0.0, 'above': 0.01}}
+Testing result for the linear method : 0.522
+
+Flop articles :
+	- Nbr in output : 48
+	- Nbr in target : 90
+	- Target flops classified as flop : 4
+	- Target flops classified as mild_success : 3
+	- Target flops classified as success : 52
+	- Target flops classified as great_success : 29
+	- Target flops classified as viral : 2
+
+Mild success articles :
+	- Nbr in output : 57
+	- Nbr in target : 1735
+	- Target mild_successes classified as flop : 21
+	- Target mild_successes classified as mild_success : 35
+	- Target mild_successes classified as success : 926
+	- Target mild_successes classified as great_success : 664
+	- Target mild_successes classified as viral : 89
+
+Success articles :
+	- Nbr in output : 1738
+	- Nbr in target : 1631
+	- Target successes classified as flop : 19
+	- Target successes classified as mild_success : 18
+	- Target successes classified as success : 622
+	- Target successes classified as great_success : 822
+	- Target successes classified as viral : 150
+
+Great success articles :
+	- Nbr in output : 1801
+	- Nbr in target : 287
+	- Target great_successes classified as flop : 2
+	- Target great_successes classified as mild_success : 1
+	- Target great_successes classified as success : 91
+	- Target great_successes classified as great_success : 159
+	- Target great_successes classified as viral : 34
+
+Viral articles :
+	- Nbr in output : 321
+	- Nbr in target : 222
+	- Target virals classified as flop : 2
+	- Target virals classified as mild_success : 0
+	- Target virals classified as success : 47
+	- Target virals classified as great_success : 127
+	- Target virals classified as viral : 46

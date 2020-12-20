@@ -1,0 +1,49 @@
+Best training result for the linear method : 0.523
+Trained parameters : {'select_mut__k': range(2, 59, 2)}
+Best parameters : {'select_mut__k': 12}
+Testing result for the linear method : 0.516
+
+Flop articles :
+	- Nbr in output : 30
+	- Nbr in target : 90
+	- Target flops classified as flop : 1
+	- Target flops classified as mild_success : 8
+	- Target flops classified as success : 40
+	- Target flops classified as great_success : 31
+	- Target flops classified as viral : 10
+
+Mild success articles :
+	- Nbr in output : 74
+	- Nbr in target : 1735
+	- Target mild_successes classified as flop : 18
+	- Target mild_successes classified as mild_success : 43
+	- Target mild_successes classified as success : 575
+	- Target mild_successes classified as great_success : 804
+	- Target mild_successes classified as viral : 295
+
+Success articles :
+	- Nbr in output : 1119
+	- Nbr in target : 1631
+	- Target successes classified as flop : 8
+	- Target successes classified as mild_success : 20
+	- Target successes classified as success : 404
+	- Target successes classified as great_success : 832
+	- Target successes classified as viral : 367
+
+Great success articles :
+	- Nbr in output : 1905
+	- Nbr in target : 287
+	- Target great_successes classified as flop : 1
+	- Target great_successes classified as mild_success : 2
+	- Target great_successes classified as success : 66
+	- Target great_successes classified as great_success : 144
+	- Target great_successes classified as viral : 74
+
+Viral articles :
+	- Nbr in output : 837
+	- Nbr in target : 222
+	- Target virals classified as flop : 2
+	- Target virals classified as mild_success : 1
+	- Target virals classified as success : 34
+	- Target virals classified as great_success : 94
+	- Target virals classified as viral : 91

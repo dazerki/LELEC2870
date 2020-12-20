@@ -1,0 +1,49 @@
+Best training result for the RF method : 0.533
+Trained parameters : {'regression__n_estimators': [50], 'regression__min_samples_split': [5], 'regression__min_samples_leaf': [3], 'regression__max_depth': [20], 'regression__max_features': ['auto'], 'regression__ccp_alpha': [0.01]}
+Best parameters : {'regression__ccp_alpha': 0.01, 'regression__max_depth': 20, 'regression__max_features': 'auto', 'regression__min_samples_leaf': 3, 'regression__min_samples_split': 5, 'regression__n_estimators': 50}
+Testing result for the RF method : 0.529
+
+Flop articles :
+	- Nbr in output : 0
+	- Nbr in target : 90
+	- Target flops classified as flop : 0
+	- Target flops classified as mild_success : 21
+	- Target flops classified as success : 55
+	- Target flops classified as great_success : 10
+	- Target flops classified as viral : 4
+
+Mild success articles :
+	- Nbr in output : 309
+	- Nbr in target : 1735
+	- Target mild_successes classified as flop : 0
+	- Target mild_successes classified as mild_success : 206
+	- Target mild_successes classified as success : 1101
+	- Target mild_successes classified as great_success : 307
+	- Target mild_successes classified as viral : 121
+
+Success articles :
+	- Nbr in output : 2356
+	- Nbr in target : 1631
+	- Target successes classified as flop : 0
+	- Target successes classified as mild_success : 73
+	- Target successes classified as success : 977
+	- Target successes classified as great_success : 426
+	- Target successes classified as viral : 155
+
+Great success articles :
+	- Nbr in output : 936
+	- Nbr in target : 287
+	- Target great_successes classified as flop : 0
+	- Target great_successes classified as mild_success : 8
+	- Target great_successes classified as success : 134
+	- Target great_successes classified as great_success : 105
+	- Target great_successes classified as viral : 40
+
+Viral articles :
+	- Nbr in output : 364
+	- Nbr in target : 222
+	- Target virals classified as flop : 0
+	- Target virals classified as mild_success : 1
+	- Target virals classified as success : 89
+	- Target virals classified as great_success : 88
+	- Target virals classified as viral : 44

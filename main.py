@@ -85,6 +85,8 @@ class ModelTrainer:
             self.model = KNeighborsRegressor()
         elif modelType == 'MLP':
             self.model = MLPRegressor(random_state=self.seed, max_iter=500)
+        elif modelType == 'RF':
+            self.model = RandomForestRegressor(random_state=self.seed)
 
     def outputClassRepartition(self, file):
         output = self.model.predict(self.evalData)
@@ -172,7 +174,7 @@ class ModelTrainer:
                 scoring=score_func
             )
 
-        if self.modelType == 'MLP':
+        if self.modelType == 'MLP' or self.modelType == 'RF':
             self.model.fit(self.data, np.ravel(self.target))
             if parametersGrid is not None:
                 self.training_score = self.model.best_score_
@@ -283,18 +285,23 @@ if __name__ == "__main__":
 
     # preProcessing.append(['whitening', 'upsample'])  # for MLP
 
+    # Random Forest tests
+
+    # preProcessing.append(['upsample'])
+
     # if you want to test your methods on the log version of the data just remove the comments
     log = False
-    # binaries = np.zeros(X1.shape[1])
-    # for j in range(X1.shape[1]):
-    #     if len(np.unique(X1[:, j])) == 2:
-    #         binaries[j] = 1
-    #     else:
-    #         binaries[j] = 0
-    # binaries = binaries.astype(bool)
-    # X1[:, np.logical_not(binaries)] = np.log(X1[:, np.logical_not(binaries)] + 2.0)
-    # X2[:, np.logical_not(binaries)] = np.log(X2[:, np.logical_not(binaries)] + 2.0)
-    # log = True
+    binaries = np.zeros(X1.shape[1])
+    for j in range(X1.shape[1]):
+        if len(np.unique(X1[:, j])) == 2:
+            binaries[j] = 1
+        else:
+            binaries[j] = 0
+    binaries = binaries.astype(bool)
+    X1_log = X1.copy()
+    X2_log = X2.copy()
+    X1_log[:, np.logical_not(binaries)] = np.log(X1_log[:, np.logical_not(binaries)] + 2.0)
+    X2_log[:, np.logical_not(binaries)] = np.log(X2_log[:, np.logical_not(binaries)] + 2.0)
 
     for i in range(len(preProcessing)):
         if preProcessing[i].__contains__('select_corr') or preProcessing[i].__contains__('mrmr'):
@@ -311,9 +318,12 @@ if __name__ == "__main__":
 
     for i, method in enumerate(methods):
 
+        log = False
+
+        if preProcessing[i].__contains__('log'):
+            log = True
+
         output_file = "results/" + method + "/" + method
-        if log:
-            output_file += "_log"
         for step in preProcessing[i]:
             output_file += "_" + step
 
@@ -321,8 +331,12 @@ if __name__ == "__main__":
         print("Pre-processing steps : {}".format(preProcessing[i]))
 
         # Build the trainer
-        trainer = ModelTrainer(X1, Y1, keys, method, preProcessing[i], scoreregression, feature_correlations,
-                               target_correlations, target_muInf, test_ratio=test_ratio, seed=seed)
+        if log:
+            trainer = ModelTrainer(X1_log, Y1, keys, method, preProcessing[i], scoreregression, feature_correlations,
+                                   target_correlations, target_muInf, test_ratio=test_ratio, seed=seed)
+        else:
+            trainer = ModelTrainer(X1, Y1, keys, method, preProcessing[i], scoreregression, feature_correlations,
+                                   target_correlations, target_muInf, test_ratio=test_ratio, seed=seed)
 
         # Add the pre-processing steps to the pipeline
         print("Start of pre-processing ...", end="")
@@ -409,6 +423,38 @@ if __name__ == "__main__":
                 grid_params['PCA__n_components'] = range(2, 59, 5)
             if preProcessing[i].__contains__('whitening'):
                 grid_params['whitening__n_components'] = range(8, 16, 2)
+
+
+        elif method == "RF":
+
+            # grid_params for the method, Random Forests have some meta-parameters
+
+            grid_params = {
+
+                'regression__n_estimators': [100]
+
+            }
+
+            if preProcessing[i].__contains__('mrmr'):
+                grid_params['mrmr__n_components'] = range(2, 59, 2)
+
+                grid_params['mrmr__thresh'] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+            if preProcessing[i].__contains__('select_corr'):
+                grid_params['select_corr__k'] = range(2, 59, 2)
+
+            if preProcessing[i].__contains__('select_mut'):
+                grid_params['select_mut__k'] = range(2, 59, 2)
+
+            if preProcessing[i].__contains__('outliers'):
+                grid_params['outliers__kw_args'] = [{'above': 0.05 * j} for j in range(11)]
+
+            if preProcessing[i].__contains__('PCA'):
+                grid_params['PCA__n_components'] = range(2, 59, 2)
+
+            if preProcessing[i].__contains__('whitening'):
+                grid_params['whitening__n_components'] = range(2, 59, 2)
+
 
         else:
             grid_params = None
